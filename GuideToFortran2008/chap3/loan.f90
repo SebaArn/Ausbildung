@@ -16,10 +16,10 @@ print *,"Monate (dauer) eingeben"
 read *,m
 
 call loanf_(p,rannual,m,res)
-        print*, "Monat ",0,"zu zahlen:",0,"     . Restbetrag: ", p+m*res-(i*res+i*p/m)
+        print"(a, i3,a, f10.2 ,a,f8.2,a,f8.2)", "Monat  ", 0,"  zu zahlen:",0.00,"€. Restbetrag: ", p+m*res-(i*res+i*p/m)
 
 do i = 1,m
-	print*, "Monat ",i,"zu zahlen:",res+p/m,". Restbetrag: ", p+m*res-(i*res+i*p/m) 
+	print"(a, i3,a, f10.2 ,a,f8.2,a,f8.2)", "Monat  ", i ,"  zu zahlen:",(res+p/m),"€. Restbetrag: ", p+m*res-(i*res+i*p/m) 
 end do	
 !print *,res
 end program loan
