@@ -2,8 +2,8 @@ program loan
 use loanmodule
 implicit none
 integer::i,m
-real :: p,rannual,res
-
+real(kind=4) :: p,rannual,res
+real(kind=16):: kind
 p=0
 rannual=0
 m=0
@@ -16,10 +16,12 @@ print *,"Monate (dauer) eingeben"
 read *,m
 
 call loanf_(p,rannual,m,res)
-        print"(a, i3,a, f10.2 ,a,f8.2,a,f8.2)", "Monat  ", 0,"  zu zahlen:",0.00,"€. Restbetrag: ", p+m*res-(i*res+i*p/m)
+kind =p+m*res-(i*res+i*p/m)
+        print"(a, i3,a, f14.2 ,a,f16.2)", "Monat  ", 0,"  zu zahlen:",0.00,"€. Restbetrag:   ", kind
 
 do i = 1,m
-	print"(a, i3,a, f10.2 ,a,f8.2,a,f8.2)", "Monat  ", i ,"  zu zahlen:",(res+p/m),"€. Restbetrag: ", p+m*res-(i*res+i*p/m) 
+kind=p+m*res-(i*res+i*p/m) 
+	print"(a, i3,a,f16.2 ,a, f16.2)", "Monat  ", i ,"  zu zahlen:",(res+p/m),"€. Restbetrag:   ", kind
 end do	
 !print *,res
 end program loan
