@@ -17,11 +17,11 @@ read *,m
 
 call loanf_(p,rannual,m,res)
 kind =p+m*res-(i*res+i*p/m)
-        print"(a, i3,a, f14.2 ,a,f16.2)", "Monat  ", 0,"  zu zahlen:",0.00,"€. Restbetrag:   ", kind
+        print"(a, i3,a, f16.2 ,a,f16.2,a)", "Monat  ", 0,"  zu zahlen:",0.00,"€. Restbetrag:   ", kind,"€."
 
 do i = 1,m
 kind=p+m*res-(i*res+i*p/m) 
-	print"(a, i3,a,f16.2 ,a, f16.2)", "Monat  ", i ,"  zu zahlen:",(res+p/m),"€. Restbetrag:   ", kind
+	print"(a, i3,a,f16.2 ,a, f16.2,a)", "Monat  ", i ,"  zu zahlen:",(res+p/m),"€. Restbetrag:   ", kind,"€."
 end do	
 !print *,res
 end program loan
