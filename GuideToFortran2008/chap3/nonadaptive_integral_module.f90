@@ -21,7 +21,7 @@ integer::i
 h = (b-a)/n
 total = 0.5*(f(a)+f(b))
 do i = 1, n-1
-total = total + f(a+i*h)
+	total = total + f(a+i*h)
 end do
 
 end function integral_na

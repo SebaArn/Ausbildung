@@ -32,9 +32,9 @@ if (abs(one_trapezoid_area - two_trapezoid_area) < 3.0 *tolerance) then
 	integral_result = two_trapezoid_area
 else
 !print *, a,mid, b
-open(unit=20,file='output.txt',action="write",position ='append')
-write (20,*),a,mid,b,(one_trapezoid_area - two_trapezoid_area)
-close(unit=20)
+	open(unit=20,file='output.txt',action="write",position ='append')
+	write (20,*),a,mid,b,(one_trapezoid_area - two_trapezoid_area)
+	close(unit=20)
 	left_area = integral(f,a,mid,tolerance/2)
 	right_area = integral(f,mid,b, tolerance/2)
 	integral_result = left_area + right_area
