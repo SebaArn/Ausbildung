@@ -1,9 +1,10 @@
 program average_of_4
+use average_of_4_module
 implicit none
-real::a,b,c,d,e
+real::a,b,c,d
 
 read *,a,b,c,d
-e=(a+b+c+d)/4.0
-print *,e
+
+print *,avg(a,b,c,d)
 
 end program average_of_4

@@ -1,8 +1,9 @@
 program cone_volume
+use cone_volume_module
 implicit none
-real::r,h
+real::radi,height
 
-read *,r,h
-print*, (3.1415*(r*r)*h/3)
+read *,radi,height
+print*,volume(radi,height)
 
 end program cone_volume
