@@ -10,8 +10,6 @@ import string
 import pandas
 import argparse
 import os.path
-
-
 # %matplotlib inline
 
 
@@ -21,14 +19,11 @@ ap.add_argument('Output', type=str, nargs=1)
 ap.add_argument('Quota', type=int, nargs='?')
 parameter = ap.parse_args()
 plt.rcParams['figure.figsize'] = [6, 4]  # set global parameters
-# print ("please enter the name of a data to read or press enter for the default value")
-# text = input("Dateiname:\n")
-Thresholds = [(0.7, "#ADD8E6"), (1.1,), (1.5, '#FFFF00'), (100, '#FF0000')]
-# Temporary
-print(parameter.Source[0])
+Thresholds = [(0.7, "#ADD8E6"), (1.1,"#00FF00"), (1.5, '#FFFF00'), (100, '#FF0000')]
 zieldatei = ap.parse_args()
-Quote = ap.parse_args()
-
+quote = ap.parse_args()
+Jahresquota = quote.Quota
+Teilquota = int(Jahresquota/12)
 dtype1 = np.dtype(
     [('JobID', '|S256'), ('ReqCPUS', 'i4'), ('ReqMem', '|S256'), ('ReqNodes', 'i4'), ('AllocNodes', 'i4'),
      ('AllocCPUS', 'i4'),
@@ -39,20 +34,13 @@ job_record = np.dtype([('ReqCPUS', 'i4'), ('ReqMem', 'i4')])
 original = parameter.Source[0]
 
 mypath = os.path.abspath(".")
-copy = mypath + "\copy.log-example"
-
-test = mypath + '\Testinput.log-example'
-
-# np.loadtxt(original, dtype={'names': ('ReqCPUS','ReqMem','ReqNodes','AllocNodes','AllocCPUS','NNodes','NCPUS','CPUTimeRAW','ElapsedRaw','Start','End'),
-#                            'formats': ('i64',  'i64',    'i64',    'i64',       'i64',       'i64'   , 'i64'  'i64'     ,'i64'       ,'S256' ,'S256')}, delimiter = '|',
-#           usecols = (                    3,    4,         5,         6,           7,          8,        9,      12,          13,        26,    27))
-
+copy = os.path.join(mypath, "copy.log-example")
+test = os.path.join(mypath, "testinput.log-example")
 Data = np.loadtxt(original, dtype=dtype1, delimiter='|', skiprows=0, usecols=(1, 3, 4, 5, 6, 7, 8, 9, 12, 13, 26, 27))
-CopyData = np.loadtxt(copy, dtype=dtype1, delimiter='|', skiprows=1, usecols=(1, 3, 4, 5, 6, 7, 8, 9, 12, 13, 26, 27))
+##CopyData = np.loadtxt(copy, dtype=dtype1, delimiter='|', skiprows=1, usecols=(1, 3, 4, 5, 6, 7, 8, 9, 12, 13, 26, 27))
 fin_dtype = np.dtype(
     [('Corehours', 'uint64'), ('Endtime', 'S256')]
 )
-
 
 def translateDateToSec(YMDHMS):
     x_ = str(YMDHMS, 'utf-8')
@@ -61,44 +49,6 @@ def translateDateToSec(YMDHMS):
     else:
         temptime = datetime.datetime.strptime(str(YMDHMS, 'utf-8'), "%Y-%m-%d-%H-%M-%S")
         return temptime.timestamp()
-        # Year, Month, Day, Hour, Minute, Second = x.split("-")
-        # print(int(float(Second))+ int(float(Minute))*60 +int(float(Hour))*3600 + (int(float(Day))-1)*3600*24 +(int(float(Month))-1)*3600*24*DaysByTheFirstOfMonth(Month) + (int(float(Year))-1)*3600*24*30*364)
-        # return (int(float(Second)) + int(float(Minute)) * 60 + int(float(Hour)) * 3600 + (
-        #            int(float(Day)) - 1) * 3600 * 24 + 3600 * 24 * DaysByTheFirstOfMonth(Month, Year) + (
-        #                    int(float(Year)) - 1) * 3600 * 24 * 365) - temp
-
-
-def Schaltjahr(Jahreszahl):
-    x = (int(float(Jahreszahl)))
-    if ((((x % 400) == 0) or ((x % 100) > 0)) and ((x % 4) == 0)):
-        return 1
-    else:
-        return 0
-
-
-# TODO adapt then 364 above to consider every 4th year, every 100 years, every 400 years, these are only aprox
-def DaysByTheFirstOfMonth(month, year):
-    my_dictionary = {
-        '01': 0,
-        '02': 31,
-        '03': 59 + Schaltjahr(year),
-        '04': 90 + Schaltjahr(year),
-        '05': 120 + Schaltjahr(year),
-        '06': 151 + Schaltjahr(year),
-        '07': 181 + Schaltjahr(year),
-        '08': 212 + Schaltjahr(year),
-        '09': 243 + Schaltjahr(year),
-        '10': 273 + Schaltjahr(year),
-        '11': 304 + Schaltjahr(year),
-        '12': 334 + Schaltjahr(year),
-    }
-
-    return my_dictionary[month]
-
-
-#
-# TODO fix DaysByTheFirstofMonth and the line that calls it (a set term for each of the 12 months?)
-#
 
 PlotArray = (np.zeros((Data.size, 3)))
 x = 0
@@ -125,7 +75,6 @@ for row in Data:
         y_end1 = max(y_end1, (row['AllocCPUS'] * (end_t - start_t).seconds) / 3600)
         PlotArray[x, 0] = end_t.timestamp()
         PlotArray[x, 1] = (row['AllocCPUS'] * (end_t - start_t).seconds / 3600)
-        #       PlotArray[x]=[x,x*x]
         x = x + 1
 
 # min(PlotArray, key=lambda i: i[1] if isinstance(i[1],datetime) else datetime.max)
@@ -143,7 +92,6 @@ for x in range(1, PlotArray.shape[0]):
     #    PlotArray[x,0]=2
     PlotArray[x, 2] = PlotArray[x, 1] + PlotArray[x - 1, 2]  # /=3600+10#PlotArray[x-1,1]
     y_end2 = max(y_end2, PlotArray[x, 2])
-
 SecondData = np.loadtxt(test, dtype='S256', delimiter='|', skiprows=0, usecols=(1, 14, 26, 27))
 # print(SecondData)
 # print(datetime.datetime.strptime(str(SecondData[0,3], 'utf-8'),"%Y-%m-%d-%H-%M-%S"))
@@ -156,46 +104,81 @@ for row in SecondData:
     file.write(SecondData[z][0].decode('UTF-8') + " " + SecondData[z][2].decode('UTF-8') + " " +
                SecondData[z][1].decode('UTF-8') + "\n")
     z = z + 1
-
 file.close()
 
-# TODO: set grid to 6 hour intervals, womöglich mit axis.set_xticks(21600)
-#
-
-print(x_start, y_start1, x_end, y_end1, ' ', y_start2, y_end2)
-# plt.plot(PlotArray[:,0],PlotArray[:,1], '.')
 tmp_x = [(datetime.datetime.fromtimestamp(i)) for i in PlotArray[:, 0]]
 # tmp_y=[PlotArray[i][2] for i in range(0,10)]#.shape
 tmp_y = PlotArray[:, 2]
 tmp_array = PlotArray[:, (0, 2)]
-# print (tmp_y)
-# print (tmp_array)
-# tmp_array= [PlotArray[i][0,2] for i in range(0,PlotArray.shape[0])]
-# tmp_array= [(PlotArray[i][0],PlotArray[i][2]) for i in range(0,PlotArray.shape[0])]
-# print(tmp_array)
-plt.plot(tmp_x, tmp_y, )
+
+## Creating quotas
+#TODO: create graphs for values
+instances = 6*60*60
+
+n_instances = ((x_end.timestamp() - x_start.timestamp()) / instances) + 1
+tmp_x2 = np.arange(x_start.timestamp(),x_end.timestamp(),instances)
+tmp_x2 = np.repeat(tmp_x2, 3)
+tmp_x2 = np.sort(tmp_x2)
+#print("tmp_y")
+#print(tmp_y)
+#I now have three values for each x value, one for the end of each L and two for the first two points.
+#Finding Y values
+#print(tmp_x)
+#print("tmp_x2")
+#print(tmp_x2)
+#print("tmp_x")
+#print(tmp_x)
+tmp_y2 = np.zeros(tmp_x2.shape)
+temporary = 0
+iter2 = 0
+
+for iter in range(0,int(n_instances)):
+    for i in range(0,np.size(tmp_x)):
+        if (tmp_x[i].timestamp() <= tmp_x2[iter*3]):
+            temporary = tmp_y[i]
+        else:
+            #print("Chosen "+ str(temporary)+ " at "+str(i))
+            break
+    tmp_y2[iter * 3] = temporary
+    tmp_y2[iter*3+1] = temporary + (Teilquota)
+    tmp_y2[iter*3+2] = temporary + (Teilquota)
+    tmp_x2[iter*3+2] = tmp_x2[iter*3+2] + instances
+tmp_x3 = tmp_x
+#print("meine x2")
+for x2 in range(0,np.size(tmp_x2)):
+    tmp_x3[x2] = (datetime.datetime.fromtimestamp(tmp_x2[x2]))
+tmp_x3 = tmp_x3[0:int(n_instances)*3:1]
+
+
+def colorisation (value, comp):
+    if value/comp < 0.7:
+        return 'lightblue'
+    if value / comp < 1.1:
+        return "#008000"
+    if value / comp < 1.3:
+        return '#ffa500'
+    else:
+        return '#ff0000'
+#tmp_x = np.sort(tmp_x)
+plt.plot(tmp_x, tmp_y, 'black')
+#Erstellt auch noch eine schwarze Grundlinie
+
+for e in range(0,int(n_instances-1)):
+    col = colorisation(tmp_y2[e*3+3]-tmp_y2[e*3], tmp_y2[e*3+2]-tmp_y2[e*3])
+    plt.plot([tmp_x3[e*3],tmp_x3[e*3+1],tmp_x3[e*3+2]],[tmp_y2[e*3],tmp_y2[e*3+1],tmp_y2[e*3+2]], col)
+col = colorisation(np.max(tmp_y)-tmp_y2[-3],tmp_y2[-1]- tmp_y2[-3])
+plt.plot([tmp_x3[-3],tmp_x3[-2],tmp_x3[-1]],[tmp_y2[-3],tmp_y2[-2],np.max(tmp_y2[-1])], col)
+
 axis = plt.gca()
-#    axis.set_xticks()
-# axis.set_yscale('log')
-print(x_end)
 temptimest = x_start.timestamp()
 temptimest2 = x_end.timestamp()
-#    axis.set_xlim([datetime.datetime.fromtimestamp(int(temptimest - 86400)),datetime.datetime.fromtimestamp(int(temptimest2+ 86400))])
-# alternativ
 axis.set_xlim([datetime.datetime.fromtimestamp(int(temptimest - (temptimest2 - temptimest) / 20)),
                datetime.datetime.fromtimestamp(int(temptimest2 + (temptimest2 - temptimest) / 20))])
 axis.set_ylim([y_start2 - (0.05 * y_end2), y_end2 * 1.05])
 # axis.set_xticks(21600, minor=False)
-#
+
+PlotQuota = []
 plt.grid(True)
-
-# locs, labels = plt.xticks()
-# axis.xaxis.set_ticks(np.arange(x_start,x_end,2628000))
-# plt.plot(x,y, '.')
-# plt.plot(times,coreseconds, '*')
-# print(times)
-# print (coreseconds)
-
 plt.ylabel('Corehours')
 plt.xlabel('Enddate of Process')
 manager = plt.get_current_fig_manager()
@@ -205,7 +188,4 @@ fig = plt.gcf()
 fig.set_size_inches((11, 8.5), forward=False)
 fig.savefig(zieldatei.Output[0], dpi=500)
 # plt.savefig("graph.png", bbox_inches='tight')
-# testype = np.dtype(
-#    [('A', '|S256'),('B', 'i4'), ('C', '|S256')])
-# var1=np.array([('Foo',1,'a est'),('Goo',2,'more text'),('Hoo',3,'even more text')],dtype=testype)
 
