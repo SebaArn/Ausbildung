@@ -56,7 +56,7 @@ time_accumulator = 0
 # Set a start date way in the future
 x_start = datetime.datetime.strptime("3000-01-01-01-01-01", "%Y-%m-%d-%H-%M-%S")
 x_end = datetime.datetime.strptime("2000-01-01-01-01-01", "%Y-%m-%d-%H-%M-%S")
-# Set y max to the estmated total amount of core-hours in a year for the Lichtenberg (for max,min computation)
+# Set y max to the estimated total amount of core-hours in a year for the Lichtenberg (for max,min computation)
 y_start1 = 1000000000000000000000000000000000
 y_end1 = 0
 for row in Data:
@@ -84,7 +84,7 @@ PlotArray[0, 2] = PlotArray[0][1]
 y_start2 = 0
 y_end2 = 0
 
-# calculating cumulative Y-values, finding highest value under y_end2
+# calculating cumulative Y-values, finding highest value and assigning it to y_end2
 for x in range(1, PlotArray.shape[0]):
     PlotArray[x, 2] = PlotArray[x, 1] + PlotArray[x - 1, 2]
     y_end2 = max(y_end2, PlotArray[x, 2])
@@ -108,11 +108,11 @@ tmp_x = [(datetime.datetime.fromtimestamp(i)) for i in PlotArray[:, 0]]
 tmp_y = PlotArray[:, 2]
 tmp_array = PlotArray[:, (0, 2)]
 
-## Creating quota-durations
+# creates quota-durations
 #TODO: adapt instances depending on timerange
 instances = 6*60*60
 
-#Splits the graph into intervals and creats three values for each instance, to visualise quotas
+# splits the graph into intervals and creates three values for each instance, to visualise quotas
 n_instances = ((x_end.timestamp() - x_start.timestamp()) / instances) + 1
 tmp_x2 = np.arange(x_start.timestamp(),x_end.timestamp(),instances)
 tmp_x2 = np.repeat(tmp_x2, 3)
@@ -122,15 +122,15 @@ temporary = 0
 iter2 = 0
 
 # shifts the second of each triple along the y-axis, and the third along x- and y-axis
-for iter in range(0,int(n_instances)):
-    for i in range(0,np.size(tmp_x)):
-        if (tmp_x[i].timestamp() <= tmp_x2[iter*3]):
+for iter in range(0, int(n_instances)):
+    for i in range(0, np.size(tmp_x)):
+        if tmp_x[i].timestamp() <= tmp_x2[iter*3]:
             temporary = tmp_y[i]
         else:
             break
     tmp_y2[iter * 3] = temporary
-    tmp_y2[iter*3+1] = temporary + (partialQuota)
-    tmp_y2[iter*3+2] = temporary + (partialQuota)
+    tmp_y2[iter*3+1] = temporary + partialQuota
+    tmp_y2[iter*3+2] = temporary + partialQuota
     tmp_x2[iter*3+2] = tmp_x2[iter*3+2] + instances
 tmp_x3 = tmp_x
 
@@ -140,6 +140,8 @@ for x2 in range(0,np.size(tmp_x2)):
 tmp_x3 = tmp_x3[0:int(n_instances)*3:1]
 
 # separates the quotas into four categories
+
+
 def colorisation (value, comp):
     if value/comp < 0.7:
         return 'lightblue'
@@ -153,7 +155,7 @@ def colorisation (value, comp):
 
 # plotting the main graph
 plt.plot(tmp_x, tmp_y, 'black')
-# adds an additional unwanted line along the x-achsis
+# adds an additional unwanted line along the x-axis
 
 # determines the color via colorisation and then plots three points, stops before the last interval to draw
 for e in range(0,int(n_instances-1)):
