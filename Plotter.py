@@ -5,13 +5,15 @@ import argparse
 import os.path
 
 #Read parameter inputs three are expected; two filenames and one Number >0.
+#If the number is 0, an error is thrown, numbers below 0 will not throw an error, but
+#not result in meaningfull visualisiations
 ap = argparse.ArgumentParser()
 ap.add_argument('Source', type=str, nargs=1)
 ap.add_argument('Output', type=str, nargs=1)
 ap.add_argument('Quota', type=int, nargs='?')
 parameter = ap.parse_args()
 
-#convert inputs to data
+#convert inputparameters into data to interpret
 plt.rcParams['figure.figsize'] = [6, 4]  # set global parameters
 targetFile = ap.parse_args()
 yearlyQuota = ap.parse_args().Quota
@@ -24,6 +26,8 @@ dataType = np.dtype(
 job_record = np.dtype([('ReqCPUS', 'i4'), ('ReqMem', 'i4')])
 original = parameter.Source[0]
 currentPath = os.path.abspath(".")
+
+#copy and test may cause issues, as they use the currently active path and assume that both files actually do exist
 copy = os.path.join(currentPath, "copy.log-example")
 test = os.path.join(currentPath, "testinput.log-example")
 Data = np.loadtxt(original, dtype=dataType, delimiter='|', skiprows=0, usecols=(1, 3, 4, 5, 6, 7, 8, 9, 12, 13, 26, 27))
@@ -84,7 +88,7 @@ for x in range(1, PlotArray.shape[0]):
     y_end2 = max(y_end2, PlotArray[x, 2])
 SecondData = np.loadtxt(test, dtype='S256', delimiter='|', skiprows=0, usecols=(1, 14, 26, 27))
 
-#Test outputs
+#Test outputs, clears writingfile, then adds the three datapoints from test data for each row
 file = open("writingfile.txt", "w")
 file.close()
 file = open("writingfile.txt", "a")
