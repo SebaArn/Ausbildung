@@ -4,6 +4,7 @@ import datetime
 import argparse
 import os.path
 
+
 # Read parameter inputs three are expected; two filenames and one Number >0.
 # if the number is 0, an error is thrown, numbers below 0 will not throw an error, but
 # not result in meaningful visualisations
@@ -13,6 +14,7 @@ ap.add_argument('Output', type=str, nargs=1)
 ap.add_argument('Quota', type=int, nargs='?')
 parameter = ap.parse_args()
 
+# parse parameters into values, divide the Quota into months from the yearly quota.
 # convert input-parameters into data to interpret
 plt.rcParams['figure.figsize'] = [6, 4]  # set global parameters
 targetFile = ap.parse_args()
@@ -27,18 +29,23 @@ job_record = np.dtype([('ReqCPUS', 'i4'), ('ReqMem', 'i4')])
 original = parameter.Source[0]
 currentPath = os.path.abspath(".")
 
-# copy and test may cause issues, as they use the currently active path and assume that both files actually do exist
+# copy and test may cause issues, as they use the currently active path and assume that both files actually exist
 copy = os.path.join(currentPath, "copy.log-example")
 test = os.path.join(currentPath, "testinput.log-example")
+# load the data from file with the given name, discarding most irrelevant sets of data.
 Data = np.loadtxt(original, dtype=dataType, delimiter='|', skiprows=0, usecols=(1, 3, 4, 5, 6, 7, 8, 9, 12, 13, 26, 27))
-#CopyData = np.loadtxt(copy, dtype=dtype1, delimiter='|', skiprows=1, usecols=(1, 3, 4, 5, 6, 7, 8, 9, 12, 13, 26, 27))
 fin_dtype = np.dtype(
     [('Corehours', 'uint64'), ('Endtime', 'S256')]
 )
 
 # translateDateToSec receives a date and returns the date in unix-time, if it's a valid date,
 # (i.e not "Unknown" otherwise returns -1)
+# If there is more invalid inputs possible in the log-system, this has to be expanded.
 def translateDateToSec(YMDHMS):
+    """
+    :param YMDHMS: the year-month-day-hour-minute-second data to be translated into unix-time
+    :return: the amount of seconds passed since the first of january 1970 00:00 UTC
+    """
     x_ = str(YMDHMS, 'utf-8')
     if x_ == 'Unknown':
         return -1
@@ -59,17 +66,14 @@ x_end = datetime.datetime.strptime("2000-01-01-01-01-01", "%Y-%m-%d-%H-%M-%S")
 # Set y max to the estimated total amount of core-hours in a year for the Lichtenberg (for max,min computation)
 y_start1 = 1000000000000000000000000000000000
 y_end1 = 0
+# gathers the Cores used and multiplies with the time to generate Corehours.
 for row in Data:
-    # PlotArray[x][0] = (column[8] * column[5])
     if translateDateToSec(row[11]) > 0:
         end_t = datetime.datetime.strptime(str(row['End'], 'utf-8'), "%Y-%m-%d-%H-%M-%S")
         start_t = datetime.datetime.strptime(str(row['Start'], 'utf-8'), "%Y-%m-%d-%H-%M-%S")
         x_start = min(end_t, x_start)
         x_end = max(end_t, x_end)
-        # if row['AllocCPUS'] == 0:
-        # print ('Element',row,' has Zero CPUs')
         if (end_t - start_t).seconds < 1:
-            # print ('Element', row, ' has zero Runtime')
             continue
         y_start1 = min(y_start1, (row['AllocCPUS'] * (end_t - start_t).seconds))
         y_end1 = max(y_end1, (row['AllocCPUS'] * (end_t - start_t).seconds) / 3600)
@@ -103,18 +107,19 @@ for row in SecondData:
     z = z + 1
 file.close()
 
-# splitting Plotarray into x and y values to easier visualize them.
+# splitting PlotArray into x and y values to easier visualize them.
 tmp_x = [(datetime.datetime.fromtimestamp(i)) for i in PlotArray[:, 0]]
 tmp_y = PlotArray[:, 2]
 tmp_array = PlotArray[:, (0, 2)]
 
-# creates quota-durations
+# creates quota-durations, current default value: 6 hours
+# suggested 30*24*60*60 for months, imprecise months, assumes 30 day per month
 #TODO: adapt instances depending on timerange
 instances = 6*60*60
 
 # splits the graph into intervals and creates three values for each instance, to visualise quotas
 n_instances = ((x_end.timestamp() - x_start.timestamp()) / instances) + 1
-tmp_x2 = np.arange(x_start.timestamp(),x_end.timestamp(),instances)
+tmp_x2 = np.arange(x_start.timestamp(), x_end.timestamp(), instances)
 tmp_x2 = np.repeat(tmp_x2, 3)
 tmp_x2 = np.sort(tmp_x2)
 tmp_y2 = np.zeros(tmp_x2.shape)
@@ -143,6 +148,12 @@ tmp_x3 = tmp_x3[0:int(n_instances)*3:1]
 
 
 def colorisation (value, comp):
+    """
+    :param value: The difference between the beginning of the Instance and the end, in Coreseconds
+    :param comp: the given Quota,
+    :return: A color based on the relationship of the two parameters, red for value >> comp, green
+    for value ~~ (roughly equal) comp, blue for comp >> value and orange for value > comp
+    """
     if value/comp < 0.7:
         return 'lightblue'
     if value / comp < 1.1:
@@ -160,22 +171,23 @@ plt.plot(tmp_x, tmp_y, 'black')
 # determines the color via colorisation and then plots three points, stops before the last interval to draw
 for e in range(0,int(n_instances-1)):
     col = colorisation(tmp_y2[e*3+3]-tmp_y2[e*3], tmp_y2[e*3+2]-tmp_y2[e*3])
-    plt.plot([tmp_x3[e*3],tmp_x3[e*3+1],tmp_x3[e*3+2]],[tmp_y2[e*3],tmp_y2[e*3+1],tmp_y2[e*3+2]], col)
+    plt.plot([tmp_x3[e*3], tmp_x3[e*3+1],tmp_x3[e*3+2]], [tmp_y2[e*3], tmp_y2[e*3+1], tmp_y2[e*3+2]], col)
 
 # determines the last interval's color and draws it (uses the highest
 # recorded value as the end value of the ongoing timespan)
-col = colorisation(np.max(tmp_y)-tmp_y2[-3],tmp_y2[-1]- tmp_y2[-3])
-plt.plot([tmp_x3[-3],tmp_x3[-2],tmp_x3[-1]],[tmp_y2[-3],tmp_y2[-2],np.max(tmp_y2[-1])], col)
+col = colorisation(np.max(tmp_y)-tmp_y2[-3], tmp_y2[-1] - tmp_y2[-3])
+plt.plot([tmp_x3[-3], tmp_x3[-2], tmp_x3[-1]], [tmp_y2[-3], tmp_y2[-2], np.max(tmp_y2[-1])], col)
 
 axis = plt.gca()
-# sets the borders for the graphs, area of actual values +- 5%
+
+# sets the visual borders for the graphs, area of occurring values (main graph) +- 5%
 temptimest = x_start.timestamp()
 temptimest2 = x_end.timestamp()
 axis.set_xlim([datetime.datetime.fromtimestamp(int(temptimest - (temptimest2 - temptimest) / 20)),
                datetime.datetime.fromtimestamp(int(temptimest2 + (temptimest2 - temptimest) / 20))])
 axis.set_ylim([y_start2 - (0.05 * y_end2), y_end2 * 1.05])
 
-PlotQuota = []
+# creates a grid in the image to aid the viewer in processing the data.
 plt.grid(True)
 
 # labels the two axis
