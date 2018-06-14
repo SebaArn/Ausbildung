@@ -8,26 +8,26 @@ import argparse  # used to interpret parameters
 # This program creates an image that visualizes a given log file in relation to a given quota.
 
 # determines quota-durations, current default value: 6 hours
-# suggested 30*24*60*60 for months, imprecise months, assumes 30 day per month
+# suggested 30*24*60*60 for months, but that creates imprecise months, assumes 30 day per month
 # TODO: adapt seconds_per_instance depending on timerange
 seconds_per_instance = 6 * 60 * 60
 # Issue: hasn't implemented a proper month solution.
 
-plt.rcParams['figure.figsize'] = [6, 4]  # set global parameters, plotter initialisation
 thresholds = [0.7, 1.1, 1.5]  # If the usage this month is below thresholds times the quota,
-colors = ['lightblue', "#008000", '#ffa500']  # the quota will be colored in color
+colors = ['lightblue', "#008000", '#ffa500']  # the "L" will be colored in the equally indexed color.
 maximum = '#ff0000'  # if the usage is above the (highest threshold) * quota, the "L" will be colored in
 #  this color
+plt.rcParams['figure.figsize'] = [6, 4]  # set global parameters, plotter initialisation
 
 
-# translate_date_to_sec receives a date and returns the date in unix-time (number), if it's a valid date,
+# translate_date_to_sec receives a date and returns the date in unix-seconds, if it's a valid date,
 # (i.e not "Unknown" otherwise returns -1)
 # If there is more invalid inputs possible in the log-system, this has to be expanded.
 def translate_date_to_sec(ymdhms):
     """
-:param ymdhms: the year-month-day-hour-minute-second data (datetime.datetime) to be translated into unix-time.
-:return: the amount of seconds passed since the first of january 1970 00:00 UTC, if invalid: "-1".
-"""
+    :param ymdhms: the year-month-day-hour-minute-second data (datetime.datetime) to be translated into unix-seconds.
+    :return: the amount of seconds passed since the first of january 1970 00:00 UTC, if invalid: "-1".
+    """
     x_ = str(ymdhms, 'utf-8')
     if x_ == 'Unknown':
         return -1
@@ -76,7 +76,7 @@ data_type = np.dtype(
      ('End', '|S256')])
 
 # loads the file specified in original/Source, noteworth are 'allocCPUS', 'Start' and 'End' (3,26,27)
-# the total data available is :JobIDRaw,Account,User,ReqCPUS,ReqMem,ReqNodes,AllocNodes,AllocCPUS,NNodes,NCPUS,NTasks,
+# the total data available is: "JobIDRaw,Account,User,ReqCPUS,ReqMem,ReqNodes,AllocNodes,AllocCPUS,NNodes,NCPUS,NTasks,
 # State,CPUTimeRAW,ElapsedRaw,TotalCPU,SystemCPU,UserCPU,MinCPU,AveCPU,MaxDiskRead,AveDiskRead,MaxDiskWrite,
 # AveDiskWrite,MaxRSS,AveRSS,Submit,Start,End,Layout,ReqTRES,AllocTRES,ReqGRES,AllocGRES,Cluster,Partition,
 # Submit,Start,End"
@@ -89,10 +89,10 @@ x_end = datetime.datetime.strptime("2000-01-01-01-01-01", "%Y-%m-%d-%H-%M-%S")  
 # Set y max to the estimated total amount of core-hours in a year for the Lichtenberg (for max,min computation)
 y_start1 = 1000000000000000000000000000000000  # initialized to a huge number so it's always larger.
 y_end1 = 0  # initialized to 0 to ensure it's always smaller than the first value (max is used)
-x = 0  # iterator variable, counts how many usable exist
+x = 0  # iterator variable, counts how many usable points of data exist
 # gathers the Cores used and multiplies with the time (divided by 3600) to generate Corehours.
 for row in Data:
-    if translate_date_to_sec(row['End']) > 0:
+    if translate_date_to_sec(row['End']) > 0:  # this filters jobs that haven't ended, due to them returning "-1".
         end_t = datetime.datetime.strptime(str(row['End'], 'utf-8'), "%Y-%m-%d-%H-%M-%S")  # converts the string into a
         # datetime construct to interpret the endtime
         start_t = datetime.datetime.strptime(str(row['Start'], 'utf-8'), "%Y-%m-%d-%H-%M-%S")  # converts the string
@@ -115,7 +115,7 @@ for row in Data:
 plot_array = plot_array[0:x][:]
 plot_array = np.sort(plot_array, axis=0)
 
-# The third column is defined by the previous row's third column, as it is the cummulative runtime, the first row has
+# The third column is defined by the previous row's third column, as it is the cumulative runtime, the first row has
 # no previous row , initialising the first row's with purely the second col.
 plot_array[0, 2] = plot_array[0][1]
 y_start2 = 0
@@ -151,10 +151,10 @@ for itera in range(0, int(number_of_instances)):
             temporary = tmp_y[i]
         else:
             break
-    tmp_y2[itera * 3 + 0] = temporary  # bottom left corner of each "L"
-    tmp_y2[itera * 3 + 1] = temporary + partial_quota  # top left corner of each "L"
-    tmp_y2[itera * 3 + 2] = temporary + partial_quota  # moving top right corner upwards
-    tmp_x2[itera * 3 + 2] = tmp_x2[itera * 3 + 2] + seconds_per_instance  # shifting top right corner  right
+    tmp_y2[itera * 3 + 0] = temporary  # bottom left corner of each "L", can stay where the read value is.
+    tmp_y2[itera * 3 + 1] = temporary + partial_quota  # moving top left corner of each "L" upwards.
+    tmp_y2[itera * 3 + 2] = temporary + partial_quota  # moving top right corner upwards.
+    tmp_x2[itera * 3 + 2] = tmp_x2[itera * 3 + 2] + seconds_per_instance  # shifting top right corner  right.
 
 tmp_x3 = tmp_x
 # transforms x2 into a format visualizable via the plotter alongside the main plot
@@ -166,29 +166,30 @@ tmp_x3 = tmp_x3[0:int(number_of_instances) * 3:1]
 # sends the span of bottom left corner and top left corner, compares with span between top right and next bottom left
 for iterator in range(0, int(number_of_instances - 1)):  # not possible for the last area, hence skipping it.
     col = colorisation(tmp_y2[iterator * 3 + 3] - tmp_y2[iterator * 3], tmp_y2[iterator * 3 + 2] - tmp_y2[iterator * 3])
-    plt.plot([tmp_x3[iterator * 3], tmp_x3[iterator * 3 + 1], tmp_x3[iterator * 3 + 2]], [tmp_y2[iterator * 3], tmp_y2[iterator * 3 + 1], tmp_y2[iterator * 3 + 2]], col)
+    plt.plot([tmp_x3[iterator * 3], tmp_x3[iterator * 3 + 1], tmp_x3[iterator * 3 + 2]],  # plots the three "L"-points.
+             [tmp_y2[iterator * 3], tmp_y2[iterator * 3 + 1], tmp_y2[iterator * 3 + 2]], col)
 
 # determines the last interval's color and draws it (uses the highest
-# recorded value as the end value of the ongoing timespan)
+# recorded value as the end value of the ongoing timespan).
 col = colorisation(np.max(tmp_y)-tmp_y2[-3], tmp_y2[-1] - tmp_y2[-3])
 plt.plot([tmp_x3[-3], tmp_x3[-2], tmp_x3[-1]], [tmp_y2[-3], tmp_y2[-2], np.max(tmp_y2[-1])], col)
 axis = plt.gca()  # for plotting
 plt.plot(tmp_x, tmp_y, 'black')  # plotting the main graph
 # Issue: adds an additional unwanted line along the x-axis
 
-# sets the visual borders for the graphs, area of occurring values (main graph) +- 5%
+# Sets the visual borders for the graphs; area of occurring values (main graph) +- 5%.
 temp_timestamp1 = x_start.timestamp()
 temp_timestamp2 = x_end.timestamp()
 axis.set_xlim([datetime.datetime.fromtimestamp(int(temp_timestamp1 - (temp_timestamp2 - temp_timestamp1) / 20)),
                datetime.datetime.fromtimestamp(int(temp_timestamp2 + (temp_timestamp2 - temp_timestamp1) / 20))])
 axis.set_ylim([y_start2 - (0.05 * y_end2), y_end2 * 1.05])
-# creates a grid in the image to aid the viewer in processing the data.
+# Creates a grid in the image to aid the viewer in processing the data.
 plt.grid(True)
-# labels the two axis
+# Labels the two axes.
 plt.ylabel('cores * hours')
 plt.xlabel('enddate of process (date, time)')
 manager = plt.get_current_fig_manager()
-# saves the graph as a file under the name in "Output"
+# saves the graph as a file under the name given in the "Output" parameter
 fig = plt.gcf()
 fig.set_size_inches((11, 8.5), forward=False)
 fig.savefig(target_file, dpi=500)
