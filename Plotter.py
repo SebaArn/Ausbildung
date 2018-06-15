@@ -14,9 +14,9 @@ seconds_per_instance = 6 * 60 * 60
 # Issue: hasn't implemented a proper month solution.
 
 thresholds = [0.7, 1.1, 1.5]  # If the usage this month is below thresholds times the quota,
-colors = ['lightblue', "#008000", '#ffa500']  # the "L" will be colored in the equally indexed color.
+colors = ['#add8e6', "#008000", '#ffa500']  # the "L" will be colored in the equally indexed color.
 maximum = '#ff0000'  # if the usage is above the (highest threshold) * quota, the "L" will be colored in
-#  this color
+#  the given color 'maximum'.
 plt.rcParams['figure.figsize'] = [6, 4]  # set global parameters, plotter initialisation
 
 
@@ -32,17 +32,17 @@ def translate_date_to_sec(ymdhms):
     if x_ == 'Unknown':
         return -1
     else:
-        temp_time = datetime.datetime.strptime(str(ymdhms, 'utf-8'), "%Y-%m-%d-%H-%M-%S")
-        return temp_time.timestamp()
+        temp_time = datetime.datetime.strptime(str(ymdhms, 'utf-8'), "%Y-%m-%d-%H-%M-%S")  # convert into datetime
+        return temp_time.timestamp()  # then convert into unix-seconds (timestamp)
 
 
 # separates the quotas into four categories, taking the ratios from thresholds and the results from colors
-def colorisation (value, comp):
+def colorisation(value, comp):
     """
-    :param value: The difference between the beginning of the Instance and the end, in Coreseconds
+    :param value: The difference between the beginning of the Instance and the end, in Corehours
     :param comp: the given Quota
     :return: A color based on the relationship of the two parameters, red for value >> comp, green
-    for value ~~ (roughly equal) comp, blue for comp >> value and orange for value > comp
+     for value ~~ (roughly equal) comp, blue for comp >> value and orange for value > comp
     """
     if value/comp < thresholds[0]:
         return colors[0]
@@ -80,8 +80,8 @@ data_type = np.dtype(
 # State,CPUTimeRAW,ElapsedRaw,TotalCPU,SystemCPU,UserCPU,MinCPU,AveCPU,MaxDiskRead,AveDiskRead,MaxDiskWrite,
 # AveDiskWrite,MaxRSS,AveRSS,Submit,Start,End,Layout,ReqTRES,AllocTRES,ReqGRES,AllocGRES,Cluster,Partition,
 # Submit,Start,End"
-Data = np.loadtxt(original, dtype=data_type, delimiter='|', skiprows=0, usecols=(1, 3, 4, 5, 6, 7, 8, 9, 12, 13, 26, 27))
-# currently only 3, 26,27 are used.
+Data = np.loadtxt(original, dtype=data_type, delimiter='|', skiprows=0, usecols=(1, 3, 4, 5, 6, 7, 8, 9, 12, 13, 26, 27)
+                  )  # currently only 3, 26,27 are used.
 plot_array = (np.zeros((Data.size, 3)))  # three values are needed for each data point, time, cputime and accumulated
 # Set a start date way in the future
 x_start = datetime.datetime.strptime("3000-01-01-01-01-01", "%Y-%m-%d-%H-%M-%S")  # a date far in the future
@@ -104,10 +104,10 @@ for row in Data:
             # To find out the smallest value in a group, set a variable to a value higher than the highest
             #  value in the group and replace the variable's value with every lower value you find within the group
             # the same way the maximum value is determined.
-        y_start1 = min(y_start1, (row['AllocCPUS'] * (end_t - start_t).seconds)/3600)  # calculate the lowest into hours
-        y_end1 = max(y_end1, (row['AllocCPUS'] * (end_t - start_t).seconds) / 3600)  # calculate the highest into hours
+        y_start1 = min(y_start1, (row['AllocCPUS'] * (end_t - start_t).seconds)/3600.0)  # calculate the lowest -> hours
+        y_end1 = max(y_end1, (row['AllocCPUS'] * (end_t - start_t).seconds) / 3600.0)  # calculate the highest -> hours
         plot_array[x, 0] = end_t.timestamp()  # writes the time of end into the array
-        plot_array[x, 1] = (row['AllocCPUS'] * (end_t - start_t).seconds / 3600)  # writes duration as hours * cores
+        plot_array[x, 1] = (row['AllocCPUS'] * (end_t - start_t).seconds / 3600.0)  # writes duration as hours * cores
         # into array (cpuruntime)
         x = x + 1  # if data is usable, increments
 
@@ -133,24 +133,24 @@ tmp_array = plot_array[:, (0, 2)]
 # the quota has to be drawn for each instance, instance is duration divided by instance_length + 1
 number_of_instances = ((x_end.timestamp() - x_start.timestamp()) / seconds_per_instance) + 1
 # splits the graph into intervals and creates three values for each instance, to visualise quotas
-# ___b-----c
-# ___|______
-# ___|______
-# ___a______
+# ___b----c___
+# ___|________
+# ___|________
+# ___a________
 # The three points a, b and c define each "L"
 # the coordinates for each L are saved in  tmp_x2 and tmp_y2
 tmp_x2 = np.arange(x_start.timestamp(), x_end.timestamp(), seconds_per_instance)
 tmp_x2 = np.repeat(tmp_x2, 3)  # triples tmp_x2 to create thrice the number of values
-tmp_x2 = np.sort(tmp_x2)  # Repeat creates "abcabcabc". "aaabbbccc" is needed, hence sorting.
+tmp_x2 = np.sort(tmp_x2)  # Repeat creates "abcabcabc". However "aaabbbccc" is needed, hence sorting.
 tmp_y2 = np.zeros(tmp_x2.shape)  # create a new y array to fill with quota coordinates.
-temporary = 0 # holding variable for graph-y values (reading the current corehours)
+temporary = 0  # holding variable for graph-y values (reading the current corehours)
 # shifts the second of each triple along the y-axis, and the third along x- and y-axis
 for itera in range(0, int(number_of_instances)):
     for i in range(0, np.size(tmp_x)):
-        if tmp_x[i].timestamp() <= tmp_x2[itera * 3]:
-            temporary = tmp_y[i]
+        if tmp_x[i].timestamp() <= tmp_x2[itera * 3]:  # the array was tripled, hence need to go 3 per loop.
+            temporary = tmp_y[i]  # Assigning the bottom left corner's y value to a temporary placeholder.
         else:
-            break
+            break  # Found the highest value that is below the search value. It's in 'temporary'.
     tmp_y2[itera * 3 + 0] = temporary  # bottom left corner of each "L", can stay where the read value is.
     tmp_y2[itera * 3 + 1] = temporary + partial_quota  # moving top left corner of each "L" upwards.
     tmp_y2[itera * 3 + 2] = temporary + partial_quota  # moving top right corner upwards.
@@ -173,9 +173,9 @@ for iterator in range(0, int(number_of_instances - 1)):  # not possible for the 
 # recorded value as the end value of the ongoing timespan).
 col = colorisation(np.max(tmp_y)-tmp_y2[-3], tmp_y2[-1] - tmp_y2[-3])
 plt.plot([tmp_x3[-3], tmp_x3[-2], tmp_x3[-1]], [tmp_y2[-3], tmp_y2[-2], np.max(tmp_y2[-1])], col)
-axis = plt.gca()  # for plotting
-plt.plot(tmp_x, tmp_y, 'black')  # plotting the main graph
-# Issue: adds an additional unwanted line along the x-axis
+axis = plt.gca()  # for plotting/saving the plot as it's own image
+plt.plot(tmp_x, tmp_y, 'black')  # plotting the main graph (cores * hours)
+# Issue: adds an additional unwanted line along the x-axis, using max() on each x to remove this?
 
 # Sets the visual borders for the graphs; area of occurring values (main graph) +- 5%.
 temp_timestamp1 = x_start.timestamp()
@@ -183,7 +183,7 @@ temp_timestamp2 = x_end.timestamp()
 axis.set_xlim([datetime.datetime.fromtimestamp(int(temp_timestamp1 - (temp_timestamp2 - temp_timestamp1) / 20)),
                datetime.datetime.fromtimestamp(int(temp_timestamp2 + (temp_timestamp2 - temp_timestamp1) / 20))])
 axis.set_ylim([y_start2 - (0.05 * y_end2), y_end2 * 1.05])
-# Creates a grid in the image to aid the viewer in processing the data.
+# Creates a grid in the image to aid the viewer in visually processing the data.
 plt.grid(True)
 # Labels the two axes.
 plt.ylabel('cores * hours')
