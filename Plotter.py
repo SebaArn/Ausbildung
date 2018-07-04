@@ -2,7 +2,8 @@ import numpy as np  # used to handle numbers, data structures and mathematical f
 import matplotlib.pyplot as plt  # MATLAB-like plotting
 import datetime  # Used to convert our ascii dates into unix-seconds
 import argparse  # used to interpret parameters
-
+import math
+import re
 # This code has unfixed issues, they are marked by the indicator "Issue:"
 
 # This program creates an image that visualizes a given log file in relation to a given quota.
@@ -35,7 +36,38 @@ def translate_date_to_sec(ymdhms):
         temp_time = datetime.datetime.strptime(str(ymdhms, 'utf-8'), "%Y-%m-%d-%H-%M-%S")  # convert into datetime
         return temp_time.timestamp()  # then convert into unix-seconds (timestamp)
 
-
+def translate_time_to_sec(time):
+    #print(time)
+    seconds = 0
+    flagdays = False
+    if '-' in time:
+        flagdays = True
+    time = time.split('.')[0]
+    #print(time)
+    if len(time) < 2:
+        return 0
+    #time = time[1:-1:]
+    subsplits = time.split('-')
+    #print(subsplits)
+    #print("länge",len(subsplits))
+    seconds = 0
+    if flagdays:  # days are present
+        #print('days are present')
+        #print(subsplits[0],'Days')
+        #print('test')
+        #print(''.join(c for c in subsplits[0] if c.isdigit()))
+        seconds += 24 * 3600 * int(''.join(c for c in subsplits[0] if c.isdigit()))
+        #print('that is ',seconds,"seconds")
+    timesplitseconds = subsplits[-1].split(':')
+    #print(timesplitseconds)
+    #print(seconds,'seconds')
+    for i in range(len(timesplitseconds)):
+        #print(timesplitseconds[-(i+1)],"timesplitseconds[-(i+1)]")
+        #print(''.join(c for c in (timesplitseconds[-(i + 1)]) if c.isdigit()),i)
+        seconds += int(''.join(c for c in (timesplitseconds[-(i + 1)]) if c.isdigit())) * int(math.pow(60, int(i)))
+        #print(seconds,'seconds')
+    #print('done')
+    return seconds
 # separates the quotas into four categories, taking the ratios from thresholds and the results from colors
 def colorisation(value, comp):
     """
@@ -73,15 +105,20 @@ data_type = np.dtype(
     [('JobID', '|S256'), ('ReqCPUS', 'i4'), ('ReqMem', '|S256'), ('ReqNodes', 'i4'), ('AllocNodes', 'i4'),
      ('AllocCPUS', 'i4'),
      ('NNodes', 'i4'), ('NCPUS', 'i4'), ('CPUTimeRAW', 'uint64'), ('ElapsedRaw', 'uint64'), ('Start', '|S256'),
-     ('End', '|S256')])
+     ('End', '|S256'),('UserCPU', '|S256'),('SystemCPU', '|S256')])
+eff_type = np.dtype(
+    []
+)
 
 # loads the file specified in original/Source, noteworth are 'allocCPUS', 'Start' and 'End' (3,26,27)
 # the total data available is: "JobIDRaw,Account,User,ReqCPUS,ReqMem,ReqNodes,AllocNodes,AllocCPUS,NNodes,NCPUS,NTasks,
 # State,CPUTimeRAW,ElapsedRaw,TotalCPU,SystemCPU,UserCPU,MinCPU,AveCPU,MaxDiskRead,AveDiskRead,MaxDiskWrite,
 # AveDiskWrite,MaxRSS,AveRSS,Submit,Start,End,Layout,ReqTRES,AllocTRES,ReqGRES,AllocGRES,Cluster,Partition,
 # Submit,Start,End"
-Data = np.loadtxt(original, dtype=data_type, delimiter='|', skiprows=0, usecols=(1, 3, 4, 5, 6, 7, 8, 9, 12, 13, 26, 27)
-                  )  # currently only 3, 26,27 are used.
+Data = np.loadtxt(original, dtype=data_type, delimiter='|', skiprows=0, usecols=(1, 3, 4, 5, 6, 7, 8, 9, 12, 13, 26, 27,
+                                                                                 17,16)
+                  )# currently only 3, 26,27 are used.
+#efficiencydata = np.loadtxt(original,dtype=eff_type, delimiter='|',skiprows=0,usecols=()
 plot_array = (np.zeros((Data.size, 3)))  # three values are needed for each data point, time, cputime and accumulated
 # Set a start date way in the future
 x_start = datetime.datetime.strptime("3000-01-01-01-01-01", "%Y-%m-%d-%H-%M-%S")  # a date far in the future
@@ -91,6 +128,8 @@ y_start1 = 1000000000000000000000000000000000  # initialized to a huge number so
 y_end1 = 0  # initialized to 0 to ensure it's always smaller than the first value (max is used)
 x = 0  # iterator variable, counts how many usable points of data exist
 # gathers the Cores used and multiplies with the time (divided by 3600) to generate Corehours.
+Systemt = 0
+Usert = 0
 for row in Data:
     if translate_date_to_sec(row['End']) > 0:  # this filters jobs that haven't ended, due to them returning "-1".
         end_t = datetime.datetime.strptime(str(row['End'], 'utf-8'), "%Y-%m-%d-%H-%M-%S")  # converts the string into a
@@ -108,6 +147,21 @@ for row in Data:
         y_end1 = max(y_end1, (row['AllocCPUS'] * (end_t - start_t).seconds) / 3600.0)  # calculate the highest -> hours
         plot_array[x, 0] = end_t.timestamp()  # writes the time of end into the array
         plot_array[x, 1] = (row['AllocCPUS'] * (end_t - start_t).seconds / 3600.0)  # writes duration as hours * cores
+
+        #print(row['UserCPU'],"/" ,row['SystemCPU'])
+        #print(row['SystemCPU'])
+        formated = row['SystemCPU']
+        #print(formated,'systemcpu')
+        formated = str(formated)[2:]
+        #print(formated)
+        Systemt += translate_time_to_sec(formated)
+        formated = row['UserCPU']
+        #print(formated,'usercpu')
+        formated = str(formated)[2:]
+        Usert += translate_time_to_sec(formated)
+
+        #Systemt += int(''.join(list(row['SystemCPU'])[2::]).split(':'))
+        #Usert += int(''.join(list(row['UserCPU'])[2::]))
         # into array (cpuruntime)
         x = x + 1  # if data is usable, increments
 
@@ -175,6 +229,7 @@ col = colorisation(np.max(tmp_y)-tmp_y2[-3], tmp_y2[-1] - tmp_y2[-3])
 plt.plot([tmp_x3[-3], tmp_x3[-2], tmp_x3[-1]], [tmp_y2[-3], tmp_y2[-2], np.max(tmp_y2[-1])], col)
 axis = plt.gca()  # for plotting/saving the plot as it's own image
 plt.plot(tmp_x, tmp_y, 'black')  # plotting the main graph (cores * hours)
+
 # Issue: adds an additional unwanted line along the x-axis, using max() on each x to remove this?
 
 # Sets the visual borders for the graphs; area of occurring values (main graph) +- 5%.
@@ -183,6 +238,19 @@ temp_timestamp2 = x_end.timestamp()
 axis.set_xlim([datetime.datetime.fromtimestamp(int(temp_timestamp1 - (temp_timestamp2 - temp_timestamp1) / 20)),
                datetime.datetime.fromtimestamp(int(temp_timestamp2 + (temp_timestamp2 - temp_timestamp1) / 20))])
 axis.set_ylim([y_start2 - (0.05 * y_end2), y_end2 * 1.05])
+
+
+print('the total usertime is ',Usert,"seconds")
+print('the total Systemtime is ',Systemt,"seconds")
+print('together they are',Usert+Systemt,"seconds")
+print('divided by 3600 for hours is',(Usert+Systemt)/3600,"hours")
+print('and the total number of corehours is',tmp_y[-1])
+efficiency = ((Usert+ Systemt)/3600)/tmp_y[-1]
+print('The total efficiency is',int(efficiency*10000)/100,"%")
+if efficiency < 0 or efficiency > 1:
+    print("Efficiency is outside of it's boundaries, valid is only between 0 and 1")
+plt.plot(efficiency)
+
 # Creates a grid in the image to aid the viewer in visually processing the data.
 plt.grid(True)
 # Labels the two axes.
