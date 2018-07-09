@@ -115,8 +115,7 @@ eff_type = np.dtype(
 # State,CPUTimeRAW,ElapsedRaw,TotalCPU,SystemCPU,UserCPU,MinCPU,AveCPU,MaxDiskRead,AveDiskRead,MaxDiskWrite,
 # AveDiskWrite,MaxRSS,AveRSS,Submit,Start,End,Layout,ReqTRES,AllocTRES,ReqGRES,AllocGRES,Cluster,Partition,
 # Submit,Start,End"
-Data = np.loadtxt(original, dtype=data_type, delimiter='|', skiprows=0, usecols=(1, 3, 4, 5, 6, 7, 8, 9, 12, 13, 26, 27,
-                                                                                 17,16)
+Data = np.loadtxt(original, dtype=data_type, delimiter='|', skiprows=0, usecols=(1, 3, 4, 5, 6, 7, 8, 9, 12, 13, 26, 27,17,16)
                   )# currently only 3, 26,27 are used.
 #efficiencydata = np.loadtxt(original,dtype=eff_type, delimiter='|',skiprows=0,usecols=()
 plot_array = (np.zeros((Data.size, 3)))  # three values are needed for each data point, time, cputime and accumulated
@@ -128,8 +127,8 @@ y_start1 = 1000000000000000000000000000000000  # initialized to a huge number so
 y_end1 = 0  # initialized to 0 to ensure it's always smaller than the first value (max is used)
 x = 0  # iterator variable, counts how many usable points of data exist
 # gathers the Cores used and multiplies with the time (divided by 3600) to generate Corehours.
-Systemt = 0
-Usert = 0
+Systemt = []
+Usert = []
 for row in Data:
     if translate_date_to_sec(row['End']) > 0:  # this filters jobs that haven't ended, due to them returning "-1".
         end_t = datetime.datetime.strptime(str(row['End'], 'utf-8'), "%Y-%m-%d-%H-%M-%S")  # converts the string into a
@@ -154,12 +153,19 @@ for row in Data:
         #print(formated,'systemcpu')
         formated = str(formated)[2:]
         #print(formated)
-        Systemt += translate_time_to_sec(formated)
+        if len(Systemt) == 0:
+            Systemt.append(translate_time_to_sec(formated))
+        else:
+            Systemt.append(translate_time_to_sec(formated)+Systemt[-1])
+        #Systemt += translate_time_to_sec(formated)
         formated = row['UserCPU']
         #print(formated,'usercpu')
         formated = str(formated)[2:]
-        Usert += translate_time_to_sec(formated)
-
+        #Usert += translate_time_to_sec(formated)
+        if len(Usert) == 0:
+            Usert.append(translate_time_to_sec(formated))
+        else:
+            Usert.append(translate_time_to_sec(formated)+Usert[-1])
         #Systemt += int(''.join(list(row['SystemCPU'])[2::]).split(':'))
         #Usert += int(''.join(list(row['UserCPU'])[2::]))
         # into array (cpuruntime)
@@ -167,7 +173,8 @@ for row in Data:
 
 # creates a cutoff after the array runs out of values (several data points were skipped, results in 0s) and sorts it.
 plot_array = plot_array[0:x][:]
-plot_array = np.sort(plot_array, axis=0)
+plot_array = plot_array[plot_array[:, 0].argsort()]
+    #np.sort(plot_array, axis=0)
 
 # The third column is defined by the previous row's third column, as it is the cumulative runtime, the first row has
 # no previous row , initialising the first row's with purely the second col.
@@ -240,16 +247,33 @@ axis.set_xlim([datetime.datetime.fromtimestamp(int(temp_timestamp1 - (temp_times
 axis.set_ylim([y_start2 - (0.05 * y_end2), y_end2 * 1.05])
 
 
-print('the total usertime is ',Usert,"seconds")
-print('the total Systemtime is ',Systemt,"seconds")
-print('together they are',Usert+Systemt,"seconds")
-print('divided by 3600 for hours is',(Usert+Systemt)/3600,"hours")
+
+print('the total usertime is ',Usert[-1],"seconds")
+print('the total Systemtime is ',Systemt[-1],"seconds")
+print('together they are',Usert[-1]+Systemt[-1],"seconds")
+print('divided by 3600 for hours is',(Usert[-1]+Systemt[-1])/3600,"hours")
 print('and the total number of corehours is',tmp_y[-1])
-efficiency = ((Usert+ Systemt)/3600)/tmp_y[-1]
+efficiency = ((Usert[-1]+ Systemt[-1])/3600)/tmp_y[-1]
 print('The total efficiency is',int(efficiency*10000)/100,"%")
 if efficiency < 0 or efficiency > 1:
     print("Efficiency is outside of it's boundaries, valid is only between 0 and 1")
-plt.plot(efficiency)
+
+totaltime = np.zeros(len(tmp_x))
+for i in range(0,len(totaltime)):
+    totaltime[i] = (Usert[i]+Systemt[i])//3600
+    print(totaltime[i])
+print("highest totaltime (last)",totaltime[-1])
+print("tmp_y[-1]",tmp_y[-1])
+#totaltime.sort()
+print("length of totaltime",len(totaltime))
+print("length of tmp_y",len(tmp_y))
+print("length of tmp_x",len(tmp_x))
+#print(min(totaltime),min)
+#print(max(totaltime),max)
+#print((totaltime[len(totaltime)//2]))
+#totaltime.sort()
+plt.plot(tmp_x,totaltime)
+
 
 # Creates a grid in the image to aid the viewer in visually processing the data.
 plt.grid(True)
