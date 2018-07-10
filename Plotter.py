@@ -11,7 +11,7 @@ import re
 # determines quota-durations, current default value: 6 hours
 # suggested 30*24*60*60 for months, but that creates imprecise months, assumes 30 day per month
 # TODO: adapt seconds_per_instance depending on timerange
-seconds_per_instance = 6 * 60 * 60
+seconds_per_instance = 30.25 * 24 * 60 * 60
 # Issue: hasn't implemented a proper month solution.
 
 thresholds = [0.7, 1.1, 1.5]  # If the usage this month is below thresholds times the quota,
@@ -105,7 +105,7 @@ data_type = np.dtype(
     [('JobID', '|S256'), ('ReqCPUS', 'i4'), ('ReqMem', '|S256'), ('ReqNodes', 'i4'), ('AllocNodes', 'i4'),
      ('AllocCPUS', 'i4'),
      ('NNodes', 'i4'), ('NCPUS', 'i4'), ('CPUTimeRAW', 'uint64'), ('ElapsedRaw', 'uint64'), ('Start', '|S256'),
-     ('End', '|S256'),('UserCPU', '|S256'),('SystemCPU', '|S256')])
+     ('End', '|S256'),('TotalCPU', '|S256'),('UserCPU', '|S256'),('SystemCPU', '|S256')])
 eff_type = np.dtype(
     []
 )
@@ -115,7 +115,7 @@ eff_type = np.dtype(
 # State,CPUTimeRAW,ElapsedRaw,TotalCPU,SystemCPU,UserCPU,MinCPU,AveCPU,MaxDiskRead,AveDiskRead,MaxDiskWrite,
 # AveDiskWrite,MaxRSS,AveRSS,Submit,Start,End,Layout,ReqTRES,AllocTRES,ReqGRES,AllocGRES,Cluster,Partition,
 # Submit,Start,End"
-Data = np.loadtxt(original, dtype=data_type, delimiter='|', skiprows=0, usecols=(1, 3, 4, 5, 6, 7, 8, 9, 12, 13, 26, 27,17,16)
+Data = np.loadtxt(original, dtype=data_type, delimiter='|', skiprows=0, usecols=(1, 3, 4, 5, 6, 7, 8, 9, 12, 13, 26, 27,15,17,16)
                   )# currently only 3, 26,27 are used.
 #efficiencydata = np.loadtxt(original,dtype=eff_type, delimiter='|',skiprows=0,usecols=()
 plot_array = (np.zeros((Data.size, 3)))  # three values are needed for each data point, time, cputime and accumulated
@@ -129,6 +129,7 @@ x = 0  # iterator variable, counts how many usable points of data exist
 # gathers the Cores used and multiplies with the time (divided by 3600) to generate Corehours.
 Systemt = []
 Usert = []
+Totalt = []
 for row in Data:
     if translate_date_to_sec(row['End']) > 0:  # this filters jobs that haven't ended, due to them returning "-1".
         end_t = datetime.datetime.strptime(str(row['End'], 'utf-8'), "%Y-%m-%d-%H-%M-%S")  # converts the string into a
@@ -166,6 +167,14 @@ for row in Data:
             Usert.append(translate_time_to_sec(formated))
         else:
             Usert.append(translate_time_to_sec(formated)+Usert[-1])
+        formated = row['TotalCPU']
+        #print(formated,'usercpu')
+        formated = str(formated)[2:]
+        #Usert += translate_time_to_sec(formated)
+        if len(Totalt) == 0:
+            Totalt.append(translate_time_to_sec(formated))
+        else:
+            Totalt.append(translate_time_to_sec(formated)+Totalt[-1])
         #Systemt += int(''.join(list(row['SystemCPU'])[2::]).split(':'))
         #Usert += int(''.join(list(row['UserCPU'])[2::]))
         # into array (cpuruntime)
@@ -217,10 +226,13 @@ for itera in range(0, int(number_of_instances)):
     tmp_y2[itera * 3 + 2] = temporary + partial_quota  # moving top right corner upwards.
     tmp_x2[itera * 3 + 2] = tmp_x2[itera * 3 + 2] + seconds_per_instance  # shifting top right corner  right.
 
-tmp_x3 = tmp_x
+tmp_x3 = []
 # transforms x2 into a format visualizable via the plotter alongside the main plot
-for x2 in range(0, np.size(tmp_x2)):
-    tmp_x3[x2] = (datetime.datetime.fromtimestamp(tmp_x2[x2]))
+for x2 in range(0, np.size(tmp_x2)-1):
+    print(len(tmp_x2),len(tmp_x3),x2)
+    #print(tmp_x2[x2])
+    #tmp_x3[x2] = (datetime.datetime.fromtimestamp(tmp_x2[x2]))
+    tmp_x3.append(datetime.datetime.fromtimestamp(tmp_x2[x2]))
 tmp_x3 = tmp_x3[0:int(number_of_instances) * 3:1]
 
 # determines the color via colorisation and then plots three points, stops before the last interval to draw
@@ -251,7 +263,9 @@ axis.set_ylim([y_start2 - (0.05 * y_end2), y_end2 * 1.05])
 print('the total usertime is ',Usert[-1],"seconds")
 print('the total Systemtime is ',Systemt[-1],"seconds")
 print('together they are',Usert[-1]+Systemt[-1],"seconds")
+print('highest totalt measured for reference:',Totalt[-1],"seconds")
 print('divided by 3600 for hours is',(Usert[-1]+Systemt[-1])/3600,"hours")
+print('highest totalt measured for reference:',Totalt[-1]//3600,"seconds")
 print('and the total number of corehours is',tmp_y[-1])
 efficiency = ((Usert[-1]+ Systemt[-1])/3600)/tmp_y[-1]
 print('The total efficiency is',int(efficiency*10000)/100,"%")
