@@ -229,7 +229,7 @@ for itera in range(0, int(number_of_instances)):
 tmp_x3 = []
 # transforms x2 into a format visualizable via the plotter alongside the main plot
 for x2 in range(0, np.size(tmp_x2)-1):
-    print(len(tmp_x2),len(tmp_x3),x2)
+    #print(len(tmp_x2),len(tmp_x3),x2)
     #print(tmp_x2[x2])
     #tmp_x3[x2] = (datetime.datetime.fromtimestamp(tmp_x2[x2]))
     tmp_x3.append(datetime.datetime.fromtimestamp(tmp_x2[x2]))
@@ -244,8 +244,10 @@ for iterator in range(0, int(number_of_instances - 1)):  # not possible for the 
 
 # determines the last interval's color and draws it (uses the highest
 # recorded value as the end value of the ongoing timespan).
-col = colorisation(np.max(tmp_y)-tmp_y2[-3], tmp_y2[-1] - tmp_y2[-3])
-plt.plot([tmp_x3[-3], tmp_x3[-2], tmp_x3[-1]], [tmp_y2[-3], tmp_y2[-2], np.max(tmp_y2[-1])], col)
+
+if len(tmp_x3) > 3 and len(tmp_y2) > 3:
+    col = colorisation(np.max(tmp_y)-tmp_y2[-3], tmp_y2[-1] - tmp_y2[-3])
+    plt.plot([tmp_x3[-3], tmp_x3[-2], tmp_x3[-1]], [tmp_y2[-3], tmp_y2[-2], np.max(tmp_y2[-1])], col)
 axis = plt.gca()  # for plotting/saving the plot as it's own image
 plt.plot(tmp_x, tmp_y, 'black')  # plotting the main graph (cores * hours)
 
@@ -254,9 +256,7 @@ plt.plot(tmp_x, tmp_y, 'black')  # plotting the main graph (cores * hours)
 # Sets the visual borders for the graphs; area of occurring values (main graph) +- 5%.
 temp_timestamp1 = x_start.timestamp()
 temp_timestamp2 = x_end.timestamp()
-axis.set_xlim([datetime.datetime.fromtimestamp(int(temp_timestamp1 - (temp_timestamp2 - temp_timestamp1) / 20)),
-               datetime.datetime.fromtimestamp(int(temp_timestamp2 + (temp_timestamp2 - temp_timestamp1) / 20))])
-axis.set_ylim([y_start2 - (0.05 * y_end2), y_end2 * 1.05])
+
 
 
 
@@ -275,7 +275,13 @@ if efficiency < 0 or efficiency > 1:
 totaltime = np.zeros(len(tmp_x))
 for i in range(0,len(totaltime)):
     totaltime[i] = (Usert[i]+Systemt[i])//3600
-    print(totaltime[i])
+    #print(totaltime[i])
+
+
+
+axis.set_xlim([datetime.datetime.fromtimestamp(int(temp_timestamp1 - (temp_timestamp2 - temp_timestamp1) / 20)),
+               datetime.datetime.fromtimestamp(int(temp_timestamp2 + (temp_timestamp2 - temp_timestamp1) / 20))])
+axis.set_ylim([y_start2 - (0.05 * y_end2),  totaltime[-1]* 1.05])
 print("highest totaltime (last)",totaltime[-1])
 print("tmp_y[-1]",tmp_y[-1])
 #totaltime.sort()
@@ -287,7 +293,12 @@ print("length of tmp_x",len(tmp_x))
 #print((totaltime[len(totaltime)//2]))
 #totaltime.sort()
 plt.plot(tmp_x,totaltime)
+#totaly = np.zeros(len(Totalt))
+#for i in range(len(Totalt)):
+#    totaly[i] = Totalt[i]/3600
 
+
+#plt.plot(tmp_x,totaly)
 
 # Creates a grid in the image to aid the viewer in visually processing the data.
 plt.grid(True)
