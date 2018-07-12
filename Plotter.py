@@ -1,5 +1,7 @@
 import numpy as np  # used to handle numbers, data structures and mathematical functions
 import matplotlib.pyplot as plt  # MATLAB-like plotting
+from matplotlib.collections import PatchCollection
+from matplotlib.patches import Rectangle
 import datetime  # Used to convert our ascii dates into unix-seconds
 import argparse  # used to interpret parameters
 import math
@@ -235,12 +237,19 @@ for x2 in range(0, np.size(tmp_x2)-1):
     tmp_x3.append(datetime.datetime.fromtimestamp(tmp_x2[x2]))
 tmp_x3 = tmp_x3[0:int(number_of_instances) * 3:1]
 
+
+pc = PatchCollection
 # determines the color via colorisation and then plots three points, stops before the last interval to draw
 # sends the span of bottom left corner and top left corner, compares with span between top right and next bottom left
 for iterator in range(0, int(number_of_instances - 1)):  # not possible for the last area, hence skipping it.
     col = colorisation(tmp_y2[iterator * 3 + 3] - tmp_y2[iterator * 3], tmp_y2[iterator * 3 + 2] - tmp_y2[iterator * 3])
-    plt.plot([tmp_x3[iterator * 3], tmp_x3[iterator * 3 + 1], tmp_x3[iterator * 3 + 2]],  # plots the three "L"-points.
-             [tmp_y2[iterator * 3], tmp_y2[iterator * 3 + 1], tmp_y2[iterator * 3 + 2]], col)
+    coordsx = ([tmp_x3[iterator * 3 + 1], tmp_x3[iterator * 3 + 2]])
+    coordsy= [tmp_y2[iterator * 3+1], tmp_y2[iterator * 3 + 2]]
+    #plt.plot([tmp_x3[iterator * 3], tmp_x3[iterator * 3 + 1], tmp_x3[iterator * 3 + 2]],
+    #         [tmp_y2[iterator * 3], tmp_y2[iterator * 3 + 1], tmp_y2[iterator * 3 + 2]], col)
+    plt.fill_between(coordsx, 0, coordsy, color=col, alpha=0.7)
+    #rect = Rectangle((tmp_x3[iterator * 3 + 1],tmp_y2[iterator * 3 + 1]),tmp_x3[iterator * 3 + 2]-tmp_x3[iterator * 3 + 1],tmp_y2[iterator * 3 + 2])
+    #plt.add_patch(rect)
 
 # determines the last interval's color and draws it (uses the highest
 # recorded value as the end value of the ongoing timespan).
@@ -249,7 +258,6 @@ if len(tmp_x3) > 3 and len(tmp_y2) > 3:
     col = colorisation(np.max(tmp_y)-tmp_y2[-3], tmp_y2[-1] - tmp_y2[-3])
     plt.plot([tmp_x3[-3], tmp_x3[-2], tmp_x3[-1]], [tmp_y2[-3], tmp_y2[-2], np.max(tmp_y2[-1])], col)
 axis = plt.gca()  # for plotting/saving the plot as it's own image
-plt.plot(tmp_x, tmp_y, 'black')  # plotting the main graph (cores * hours)
 
 # Issue: adds an additional unwanted line along the x-axis, using max() on each x to remove this?
 
@@ -281,7 +289,7 @@ for i in range(0,len(totaltime)):
 
 axis.set_xlim([datetime.datetime.fromtimestamp(int(temp_timestamp1 - (temp_timestamp2 - temp_timestamp1) / 20)),
                datetime.datetime.fromtimestamp(int(temp_timestamp2 + (temp_timestamp2 - temp_timestamp1) / 20))])
-axis.set_ylim([y_start2 - (0.05 * y_end2),  totaltime[-1]* 1.05])
+axis.set_ylim([y_start2 - (0.05 * y_end2),  max(totaltime[-1],tmp_y2[-1])* 1.05])
 print("highest totaltime (last)",totaltime[-1])
 print("tmp_y[-1]",tmp_y[-1])
 #totaltime.sort()
@@ -292,7 +300,10 @@ print("length of tmp_x",len(tmp_x))
 #print(max(totaltime),max)
 #print((totaltime[len(totaltime)//2]))
 #totaltime.sort()
-plt.plot(tmp_x,totaltime)
+plt.plot(tmp_x,totaltime,'#eeff7f')
+plt.fill_between(tmp_x, 0, totaltime, color='#eeff7f', alpha=0.7)
+plt.plot(tmp_x, tmp_y, 'grey',fillstyle=('bottom') , alpha=0.7)  # plotting the main graph (cores * hours)
+plt.fill_between(tmp_x, 0, tmp_y, color="white", alpha= 0.7)
 #totaly = np.zeros(len(Totalt))
 #for i in range(len(Totalt)):
 #    totaly[i] = Totalt[i]/3600
