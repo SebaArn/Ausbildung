@@ -59,6 +59,9 @@ def translate_time_to_sec(time):
         #print('test')
         #print(''.join(c for c in subsplits[0] if c.isdigit()))
         seconds += 24 * 3600 * int(''.join(c for c in subsplits[0] if c.isdigit()))
+        print(time, "contains")
+        print(int(''.join(c for c in subsplits[0] if c.isdigit())),"days")
+        print("->",seconds,"seconds")
         #print('that is ',seconds,"seconds")
     timesplitseconds = subsplits[-1].split(':')
     #print(timesplitseconds)
@@ -100,24 +103,24 @@ parameter = ap.parse_args()
 # convert input-parameters into data to interpret
 target_file = parameter.Output[0]
 yearly_quota = parameter.Quota
-partial_quota = int(yearly_quota / 12)  # Script runs under the assumption, the inserted quota = 12* the instance-quota
+if yearly_quota:
+    partial_quota = int(yearly_quota / 12)  # Script runs under the assumption, the inserted quota = 12* the instance-quota
 original = parameter.Source[0]
+
 # this type is used to seperate allocatedcpus, starttime, endtime and other currently unused sets of data from the rest
 data_type = np.dtype(
     [('JobID', '|S256'), ('ReqCPUS', 'i4'), ('ReqMem', '|S256'), ('ReqNodes', 'i4'), ('AllocNodes', 'i4'),
      ('AllocCPUS', 'i4'),
      ('NNodes', 'i4'), ('NCPUS', 'i4'), ('CPUTimeRAW', 'uint64'), ('ElapsedRaw', 'uint64'), ('Start', '|S256'),
      ('End', '|S256'),('TotalCPU', '|S256'),('UserCPU', '|S256'),('SystemCPU', '|S256')])
-eff_type = np.dtype(
-    []
-)
+
 
 # loads the file specified in original/Source, noteworth are 'allocCPUS', 'Start' and 'End' (3,26,27)
 # the total data available is: "JobIDRaw,Account,User,ReqCPUS,ReqMem,ReqNodes,AllocNodes,AllocCPUS,NNodes,NCPUS,NTasks,
 # State,CPUTimeRAW,ElapsedRaw,TotalCPU,SystemCPU,UserCPU,MinCPU,AveCPU,MaxDiskRead,AveDiskRead,MaxDiskWrite,
 # AveDiskWrite,MaxRSS,AveRSS,Submit,Start,End,Layout,ReqTRES,AllocTRES,ReqGRES,AllocGRES,Cluster,Partition,
 # Submit,Start,End"
-Data = np.loadtxt(original, dtype=data_type, delimiter='|', skiprows=0, usecols=(1, 3, 4, 5, 6, 7, 8, 9, 12, 13, 26, 27,15,17,16)
+Data = np.loadtxt(original, dtype=data_type, delimiter='|', skiprows=0, usecols=(0, 3, 4, 5, 6, 7, 8, 9, 12, 13, 26, 27,15,17,16)
                   )# currently only 3, 26,27 are used.
 #efficiencydata = np.loadtxt(original,dtype=eff_type, delimiter='|',skiprows=0,usecols=()
 plot_array = (np.zeros((Data.size, 3)))  # three values are needed for each data point, time, cputime and accumulated
@@ -133,7 +136,8 @@ Systemt = []
 Usert = []
 Totalt = []
 for row in Data:
-    if translate_date_to_sec(row['End']) > 0:  # this filters jobs that haven't ended, due to them returning "-1".
+    print(row['JobID'][2::])
+    if translate_date_to_sec(row['End']) > 0 and '.' not in str(row['JobID']):  # this filters jobs that haven't ended, due to them returning "-1".
         end_t = datetime.datetime.strptime(str(row['End'], 'utf-8'), "%Y-%m-%d-%H-%M-%S")  # converts the string into a
         # datetime construct to interpret the endtime
         start_t = datetime.datetime.strptime(str(row['Start'], 'utf-8'), "%Y-%m-%d-%H-%M-%S")  # converts the string
@@ -149,7 +153,9 @@ for row in Data:
         y_end1 = max(y_end1, (row['AllocCPUS'] * (end_t - start_t).seconds) / 3600.0)  # calculate the highest -> hours
         plot_array[x, 0] = end_t.timestamp()  # writes the time of end into the array
         plot_array[x, 1] = (row['AllocCPUS'] * (end_t - start_t).seconds / 3600.0)  # writes duration as hours * cores
-
+        print("cpus:",row['AllocCPUS'])
+        print("hours:",(end_t - start_t).seconds / 3600.0)
+        print("product =", (row['AllocCPUS'] * (end_t - start_t).seconds / 3600.0))
         #print(row['UserCPU'],"/" ,row['SystemCPU'])
         #print(row['SystemCPU'])
         formated = row['SystemCPU']
@@ -217,16 +223,17 @@ tmp_x2 = np.sort(tmp_x2)  # Repeat creates "abcabcabc". However "aaabbbccc" is n
 tmp_y2 = np.zeros(tmp_x2.shape)  # create a new y array to fill with quota coordinates.
 temporary = 0  # holding variable for graph-y values (reading the current corehours)
 # shifts the second of each triple along the y-axis, and the third along x- and y-axis
-for itera in range(0, int(number_of_instances)):
-    for i in range(0, np.size(tmp_x)):
-        if tmp_x[i].timestamp() <= tmp_x2[itera * 3]:  # the array was tripled, hence need to go 3 per loop.
-            temporary = tmp_y[i]  # Assigning the bottom left corner's y value to a temporary placeholder.
-        else:
-            break  # Found the highest value that is below the search value. It's in 'temporary'.
-    tmp_y2[itera * 3 + 0] = temporary  # bottom left corner of each "L", can stay where the read value is.
-    tmp_y2[itera * 3 + 1] = temporary + partial_quota  # moving top left corner of each "L" upwards.
-    tmp_y2[itera * 3 + 2] = temporary + partial_quota  # moving top right corner upwards.
-    tmp_x2[itera * 3 + 2] = tmp_x2[itera * 3 + 2] + seconds_per_instance  # shifting top right corner  right.
+if yearly_quota:
+    for itera in range(0, int(number_of_instances)):
+        for i in range(0, np.size(tmp_x)):
+            if tmp_x[i].timestamp() <= tmp_x2[itera * 3]:  # the array was tripled, hence need to go 3 per loop.
+                temporary = tmp_y[i]  # Assigning the bottom left corner's y value to a temporary placeholder.
+            else:
+                break  # Found the highest value that is below the search value. It's in 'temporary'.
+        tmp_y2[itera * 3 + 0] = temporary  # bottom left corner of each "L", can stay where the read value is.
+        tmp_y2[itera * 3 + 1] = temporary + partial_quota  # moving top left corner of each "L" upwards.
+        tmp_y2[itera * 3 + 2] = temporary + partial_quota  # moving top right corner upwards.
+        tmp_x2[itera * 3 + 2] = tmp_x2[itera * 3 + 2] + seconds_per_instance  # shifting top right corner  right.
 
 tmp_x3 = []
 # transforms x2 into a format visualizable via the plotter alongside the main plot
@@ -245,16 +252,16 @@ for iterator in range(0, int(number_of_instances - 1)):  # not possible for the 
     col = colorisation(tmp_y2[iterator * 3 + 3] - tmp_y2[iterator * 3], tmp_y2[iterator * 3 + 2] - tmp_y2[iterator * 3])
     coordsx = ([tmp_x3[iterator * 3 + 1], tmp_x3[iterator * 3 + 2]])
     coordsy= [tmp_y2[iterator * 3+1], tmp_y2[iterator * 3 + 2]]
-    #plt.plot([tmp_x3[iterator * 3], tmp_x3[iterator * 3 + 1], tmp_x3[iterator * 3 + 2]],
+    # plt.plot([tmp_x3[iterator * 3], tmp_x3[iterator * 3 + 1], tmp_x3[iterator * 3 + 2]],
     #         [tmp_y2[iterator * 3], tmp_y2[iterator * 3 + 1], tmp_y2[iterator * 3 + 2]], col)
-    plt.fill_between(coordsx, 0, coordsy, color=col, alpha=0.7)
+    plt.fill_between(coordsx, 0, coordsy, color=col, alpha=0.8)
     #rect = Rectangle((tmp_x3[iterator * 3 + 1],tmp_y2[iterator * 3 + 1]),tmp_x3[iterator * 3 + 2]-tmp_x3[iterator * 3 + 1],tmp_y2[iterator * 3 + 2])
     #plt.add_patch(rect)
 
 # determines the last interval's color and draws it (uses the highest
 # recorded value as the end value of the ongoing timespan).
 
-if len(tmp_x3) > 3 and len(tmp_y2) > 3:
+if len(tmp_x3) > 3 and len(tmp_y2) > 3 and yearly_quota:
     col = colorisation(np.max(tmp_y)-tmp_y2[-3], tmp_y2[-1] - tmp_y2[-3])
     plt.plot([tmp_x3[-3], tmp_x3[-2], tmp_x3[-1]], [tmp_y2[-3], tmp_y2[-2], np.max(tmp_y2[-1])], col)
 axis = plt.gca()  # for plotting/saving the plot as it's own image
@@ -266,17 +273,16 @@ temp_timestamp1 = x_start.timestamp()
 temp_timestamp2 = x_end.timestamp()
 
 
-
-
-print('the total usertime is ',Usert[-1],"seconds")
-print('the total Systemtime is ',Systemt[-1],"seconds")
-print('together they are',Usert[-1]+Systemt[-1],"seconds")
-print('highest totalt measured for reference:',Totalt[-1],"seconds")
-print('divided by 3600 for hours is',(Usert[-1]+Systemt[-1])/3600,"hours")
-print('highest totalt measured for reference:',Totalt[-1]//3600,"seconds")
-print('and the total number of corehours is',tmp_y[-1])
-efficiency = ((Usert[-1]+ Systemt[-1])/3600)/tmp_y[-1]
-print('The total efficiency is',int(efficiency*10000)/100,"%")
+print('the total usertime is ', Usert[-1], "seconds")
+print('the total Systemtime is ', Systemt[-1], "seconds")
+print('together they are', Usert[-1]+Systemt[-1], "seconds")
+print('highest totalt measured for reference:', Totalt[-1], "seconds")
+print('divided by 3600 for hours is',(Usert[-1]+Systemt[-1])/3600, "hours")
+print('highest totalt measured for reference:', Totalt[-1]//3600, "seconds")
+print('and the total number of corehours is', tmp_y[-1])
+efficiency = ((Usert[-1] + Systemt[-1])/3600)/tmp_y[-1]
+#efficiency = totaltime/tmp_y[-1]
+print('The total efficiency is',int(efficiency*10000)/100, "%")
 if efficiency < 0 or efficiency > 1:
     print("Efficiency is outside of it's boundaries, valid is only between 0 and 1")
 
@@ -300,10 +306,10 @@ print("length of tmp_x",len(tmp_x))
 #print(max(totaltime),max)
 #print((totaltime[len(totaltime)//2]))
 #totaltime.sort()
-plt.plot(tmp_x,totaltime,'#eeff7f')
-plt.fill_between(tmp_x, 0, totaltime, color='#eeff7f', alpha=0.7)
-plt.plot(tmp_x, tmp_y, 'grey',fillstyle=('bottom') , alpha=0.7)  # plotting the main graph (cores * hours)
-plt.fill_between(tmp_x, 0, tmp_y, color="white", alpha= 0.7)
+plt.plot(tmp_x, totaltime, '#eeff7f')
+plt.fill_between(tmp_x, 0, totaltime, color='#eeff7f', alpha=0.8)
+plt.plot(tmp_x, tmp_y, 'grey', fillstyle='bottom', alpha=0.7)  # plotting the main graph (cores * hours)
+plt.fill_between(tmp_x, 0, tmp_y, color="white", alpha=0.65)
 #totaly = np.zeros(len(Totalt))
 #for i in range(len(Totalt)):
 #    totaly[i] = Totalt[i]/3600
