@@ -31,6 +31,7 @@ def translate_date_to_sec(ymdhms):
     :param ymdhms: the year-month-day-hour-minute-second data (datetime.datetime) to be translated into unix-seconds.
     :return: the amount of seconds passed since the first of january 1970 00:00 UTC, if invalid: "-1".
     """
+    #print(ymdhms)
     x_ = str(ymdhms, 'utf-8')
     if x_ == 'Unknown':
         return -1
@@ -123,6 +124,8 @@ data_type = np.dtype(
 Data = np.loadtxt(original, dtype=data_type, delimiter='|', skiprows=0, usecols=(0, 3, 4, 5, 6, 7, 8, 9, 12, 13, 26, 27,15,17,16)
                   )# currently only 3, 26,27 are used.
 #efficiencydata = np.loadtxt(original,dtype=eff_type, delimiter='|',skiprows=0,usecols=()
+print("first value in Data is",Data[0]['End'])
+Data = Data[(Data[::]['End']).argsort()]
 plot_array = (np.zeros((Data.size, 3)))  # three values are needed for each data point, time, cputime and accumulated
 # Set a start date way in the future
 x_start = datetime.datetime.strptime("3000-01-01-01-01-01", "%Y-%m-%d-%H-%M-%S")  # a date far in the future
