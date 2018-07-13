@@ -59,9 +59,9 @@ def translate_time_to_sec(time):
         #print('test')
         #print(''.join(c for c in subsplits[0] if c.isdigit()))
         seconds += 24 * 3600 * int(''.join(c for c in subsplits[0] if c.isdigit()))
-        print(time, "contains")
-        print(int(''.join(c for c in subsplits[0] if c.isdigit())),"days")
-        print("->",seconds,"seconds")
+        #print(time, "contains")
+        #print(int(''.join(c for c in subsplits[0] if c.isdigit())),"days")
+        #print("->",seconds,"seconds")
         #print('that is ',seconds,"seconds")
     timesplitseconds = subsplits[-1].split(':')
     #print(timesplitseconds)
@@ -70,7 +70,7 @@ def translate_time_to_sec(time):
         #print(timesplitseconds[-(i+1)],"timesplitseconds[-(i+1)]")
         #print(''.join(c for c in (timesplitseconds[-(i + 1)]) if c.isdigit()),i)
         seconds += int(''.join(c for c in (timesplitseconds[-(i + 1)]) if c.isdigit())) * int(math.pow(60, int(i)))
-        #print(seconds,'seconds')
+        print(seconds,'seconds')
     #print('done')
     return seconds
 # separates the quotas into four categories, taking the ratios from thresholds and the results from colors
@@ -136,26 +136,32 @@ Systemt = []
 Usert = []
 Totalt = []
 for row in Data:
-    print(row['JobID'][2::])
-    if translate_date_to_sec(row['End']) > 0 and '.' not in str(row['JobID']):  # this filters jobs that haven't ended, due to them returning "-1".
+    #print(row['JobID'][2::])
+    if translate_date_to_sec(row['End']) > 0 and ("." not in str(row['JobID'])):  # this filters jobs that haven't ended, due to them returning "-1".
+        print(row['JobID'])
         end_t = datetime.datetime.strptime(str(row['End'], 'utf-8'), "%Y-%m-%d-%H-%M-%S")  # converts the string into a
         # datetime construct to interpret the endtime
         start_t = datetime.datetime.strptime(str(row['Start'], 'utf-8'), "%Y-%m-%d-%H-%M-%S")  # converts the string
         # into a datetime to interpret the starttime
         x_start = min(end_t, x_start)
         x_end = max(end_t, x_end)
-        if (end_t - start_t).seconds < 1:  # for an invalid endtime (still running) or too short a process,
+        if row["ElapsedRaw"] < 1:  # for an invalid endtime (still running) or too short a process,
             continue  # skip that set of data
             # To find out the smallest value in a group, set a variable to a value higher than the highest
             #  value in the group and replace the variable's value with every lower value you find within the group
             # the same way the maximum value is determined.
-        y_start1 = min(y_start1, (row['AllocCPUS'] * (end_t - start_t).seconds)/3600.0)  # calculate the lowest -> hours
-        y_end1 = max(y_end1, (row['AllocCPUS'] * (end_t - start_t).seconds) / 3600.0)  # calculate the highest -> hours
+        y_start1 = min(y_start1, row['AllocCPUS'] * row["ElapsedRaw"]/3600)  # calculate the lowest -> hours
+        y_end1 = max(y_end1, row['AllocCPUS'] * row["ElapsedRaw"] / 3600)  # calculate the highest -> hours
         plot_array[x, 0] = end_t.timestamp()  # writes the time of end into the array
-        plot_array[x, 1] = (row['AllocCPUS'] * (end_t - start_t).seconds / 3600.0)  # writes duration as hours * cores
-        print("cpus:",row['AllocCPUS'])
-        print("hours:",(end_t - start_t).seconds / 3600.0)
-        print("product =", (row['AllocCPUS'] * (end_t - start_t).seconds / 3600.0))
+        print("start",start_t)
+        print("end",end_t)
+        print("hours:",row["ElapsedRaw"]/ 3600, "cpus:",row['AllocCPUS'])
+        plot_array[x, 1] = row['AllocCPUS'] * row["ElapsedRaw"] / 3600  # writes duration as hours * cores
+        print("result:", plot_array[x,1])
+
+        #print("cpus:",row['AllocCPUS'])
+        #print("hours:",(end_t - start_t).seconds / 3600.0)
+        #print("product =", (row['AllocCPUS'] * (end_t - start_t).seconds / 3600.0))
         #print(row['UserCPU'],"/" ,row['SystemCPU'])
         #print(row['SystemCPU'])
         formated = row['SystemCPU']
@@ -163,29 +169,30 @@ for row in Data:
         formated = str(formated)[2:]
         #print(formated)
         if len(Systemt) == 0:
-            Systemt.append(translate_time_to_sec(formated))
+            Systemt.append(translate_time_to_sec(formated)/3600)
         else:
-            Systemt.append(translate_time_to_sec(formated)+Systemt[-1])
+            Systemt.append(translate_time_to_sec(formated)/3600+Systemt[-1])
         #Systemt += translate_time_to_sec(formated)
         formated = row['UserCPU']
         #print(formated,'usercpu')
         formated = str(formated)[2:]
         #Usert += translate_time_to_sec(formated)
         if len(Usert) == 0:
-            Usert.append(translate_time_to_sec(formated))
+            Usert.append(translate_time_to_sec(formated)/3600)
         else:
-            Usert.append(translate_time_to_sec(formated)+Usert[-1])
+            Usert.append(translate_time_to_sec(formated)/3600+Usert[-1])
         formated = row['TotalCPU']
         #print(formated,'usercpu')
         formated = str(formated)[2:]
         #Usert += translate_time_to_sec(formated)
         if len(Totalt) == 0:
-            Totalt.append(translate_time_to_sec(formated))
+            Totalt.append(translate_time_to_sec(formated)/3600)
         else:
-            Totalt.append(translate_time_to_sec(formated)+Totalt[-1])
+            Totalt.append(translate_time_to_sec(formated)+Totalt[-1]/3600)
         #Systemt += int(''.join(list(row['SystemCPU'])[2::]).split(':'))
         #Usert += int(''.join(list(row['UserCPU'])[2::]))
         # into array (cpuruntime)
+        print("totaltime",Totalt[-1])
         x = x + 1  # if data is usable, increments
 
 # creates a cutoff after the array runs out of values (several data points were skipped, results in 0s) and sorts it.
@@ -273,14 +280,12 @@ temp_timestamp1 = x_start.timestamp()
 temp_timestamp2 = x_end.timestamp()
 
 
-print('the total usertime is ', Usert[-1], "seconds")
-print('the total Systemtime is ', Systemt[-1], "seconds")
-print('together they are', Usert[-1]+Systemt[-1], "seconds")
-print('highest totalt measured for reference:', Totalt[-1], "seconds")
-print('divided by 3600 for hours is',(Usert[-1]+Systemt[-1])/3600, "hours")
-print('highest totalt measured for reference:', Totalt[-1]//3600, "seconds")
+print('the total usertime is ', Usert[-1], "hours")
+print('the total Systemtime is ', Systemt[-1], "hours")
+print('together they are', Usert[-1]+Systemt[-1], "hours")
+print('highest totalt measured for reference:', Totalt[-1], "hours")
 print('and the total number of corehours is', tmp_y[-1])
-efficiency = ((Usert[-1] + Systemt[-1])/3600)/tmp_y[-1]
+efficiency = ((Usert[-1] + Systemt[-1]))/tmp_y[-1]
 #efficiency = totaltime/tmp_y[-1]
 print('The total efficiency is',int(efficiency*10000)/100, "%")
 if efficiency < 0 or efficiency > 1:
@@ -288,14 +293,14 @@ if efficiency < 0 or efficiency > 1:
 
 totaltime = np.zeros(len(tmp_x))
 for i in range(0,len(totaltime)):
-    totaltime[i] = (Usert[i]+Systemt[i])//3600
+    totaltime[i] = Usert[i]+Systemt[i]
     #print(totaltime[i])
 
 
 
 axis.set_xlim([datetime.datetime.fromtimestamp(int(temp_timestamp1 - (temp_timestamp2 - temp_timestamp1) / 20)),
                datetime.datetime.fromtimestamp(int(temp_timestamp2 + (temp_timestamp2 - temp_timestamp1) / 20))])
-axis.set_ylim([y_start2 - (0.05 * y_end2),  max(totaltime[-1],tmp_y2[-1])* 1.05])
+axis.set_ylim([y_start2 - (0.05 * y_end2),  tmp_y[-1]* 1.05])
 print("highest totaltime (last)",totaltime[-1])
 print("tmp_y[-1]",tmp_y[-1])
 #totaltime.sort()
