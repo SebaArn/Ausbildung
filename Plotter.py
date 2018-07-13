@@ -262,11 +262,9 @@ for iterator in range(0, int(number_of_instances - 1)):  # not possible for the 
     col = colorisation(tmp_y2[iterator * 3 + 3] - tmp_y2[iterator * 3], tmp_y2[iterator * 3 + 2] - tmp_y2[iterator * 3])
     coordsx = ([tmp_x3[iterator * 3 + 1], tmp_x3[iterator * 3 + 2]])
     coordsy= [tmp_y2[iterator * 3+1], tmp_y2[iterator * 3 + 2]]
-    # plt.plot([tmp_x3[iterator * 3], tmp_x3[iterator * 3 + 1], tmp_x3[iterator * 3 + 2]],
+    #plt.plot([tmp_x3[iterator * 3], tmp_x3[iterator * 3 + 1], tmp_x3[iterator * 3 + 2]],
     #         [tmp_y2[iterator * 3], tmp_y2[iterator * 3 + 1], tmp_y2[iterator * 3 + 2]], col)
     plt.fill_between(coordsx, 0, coordsy, color=col, alpha=0.8)
-    #rect = Rectangle((tmp_x3[iterator * 3 + 1],tmp_y2[iterator * 3 + 1]),tmp_x3[iterator * 3 + 2]-tmp_x3[iterator * 3 + 1],tmp_y2[iterator * 3 + 2])
-    #plt.add_patch(rect)
 
 # determines the last interval's color and draws it (uses the highest
 # recorded value as the end value of the ongoing timespan).
