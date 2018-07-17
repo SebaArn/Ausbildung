@@ -92,10 +92,18 @@ parameter = ap.parse_args()
 # convert input-parameters into data to interpret
 target_file = parameter.Output[0]
 startpoint = parameter.StartPoint
-print(startpoint)
+#print(startpoint)
+#print(len(startpoint))
+if len(startpoint) == 10: #appends hours, minutes and seconds if only date given
+      startpoint += "-00-00-00"
 startpoint = (str(startpoint)[::])
-print(startpoint)
-filter = parameter.ProjectName
+#print(startpoint)
+#print (parameter.ProjectName)
+if parameter.ProjectName is not None:  #if no name is given, sets the filter to ""
+    filter = parameter.ProjectName
+else:
+    filter = ""
+
 if parameter.Quota:
     yearly_quota = parameter.Quota[0]
 else:
@@ -125,23 +133,23 @@ Data = np.loadtxt(original, dtype=data_type, delimiter='|', skiprows=0, usecols=
 #print("first value in Data is",Data[0]['End'])
 Data = Data[(Data[::]['End']).argsort()]
 
-print("startpoint is:", startpoint)
+#print("startpoint is:", startpoint)
 if startpoint == "None":
-    print("no startvalue given")
+    #print("no startvalue given")
     x = Data[0][10]
     x = (str(x)[2::])
     x = x[:-1:]
-    print(x)
+    #print(x)
     startpoint = x
     #print((Data[0][10])[2::])
     #startpoint = datetime.datetime.strptime(x, "%Y-%m-%d-%H-%M-%S")
 
 datetime.datetime.strptime(startpoint, "%Y-%m-%d-%H-%M-%S")
-print()
-print((datetime.datetime.strptime(startpoint, "%Y-%m-%d-%H-%M-%S")).timestamp())
+#print()
+#print((datetime.datetime.strptime(startpoint, "%Y-%m-%d-%H-%M-%S")).timestamp())
 x = (datetime.datetime.strptime(startpoint, "%Y-%m-%d-%H-%M-%S")).timestamp()
 x += 3600*24*365
-print(datetime.datetime.fromtimestamp(x))
+#print(datetime.datetime.fromtimestamp(x))
 
 plot_array = (np.zeros((Data.size, 3)))  # three values are needed for each data point, time, cputime and accumulated
 # Set a start date way in the future
@@ -197,7 +205,8 @@ plot_array = plot_array[plot_array[:, 0].argsort()]
 
 # The third column is defined by the previous row's third column, as it is the cumulative runtime, the first row has
 # no previous row , initialising the first row's with purely the second col.
-plot_array[0, 2] = plot_array[0][1]
+if len(plot_array) >= 2:
+    plot_array[0, 2] = plot_array[0][1]
 y_start2 = 0
 y_end2 = 0
 
@@ -261,10 +270,32 @@ for iterator in range(0, int(number_of_instances - 1)):  # not possible for the 
 # determines the last interval's color and draws it (uses the highest
 # recorded value as the end value of the ongoing timespan).
 
-if len(tmp_x3) > 3 and len(tmp_y2) > 3 and yearly_quota:
-    col = colorisation(np.max(tmp_y)-tmp_y2[-3], tmp_y2[-1] - tmp_y2[-3])
-    plt.plot([tmp_x3[-3], tmp_x3[-2], tmp_x3[-1]], [tmp_y2[-3], tmp_y2[-2], np.max(tmp_y2[-1])], col)
+#if len(tmp_x3) > 3 and len(tmp_y2) > 3 and yearly_quota:
+#    col = colorisation(np.max(tmp_y)-tmp_y2[-3], tmp_y2[-1] - tmp_y2[-3])
+#    plt.plot([tmp_x3[-3], tmp_x3[-2], tmp_x3[-1]], [tmp_y2[-3], tmp_y2[-2], np.max(tmp_y2[-1])], col)
 axis = plt.gca()  # for plotting/saving the plot as it's own image
+
+
+if yearly_quota and len(tmp_x) >= 1:
+    extrapolationx = []
+    extrapolationy = []
+    extrapolationx.append(tmp_x[-1])
+    extrapolationx.append(tmp_x[-1])
+    extrapolationy.append(tmp_y[-1])
+    extrapolationy.append(tmp_y[-1])
+
+    extrapolationx[1] = (datetime.datetime.strptime(startpoint, "%Y-%m-%d-%H-%M-%S")).timestamp()
+    extrapolationx[1] += (365+30)*24*3600
+#print("extrapolx1 = ",extrapolationx[1])
+    extrapolationx[1] = datetime.datetime.fromtimestamp(extrapolationx[1])
+#print("extrapolx1 = ",extrapolationx[1])
+    difference = datetime.datetime.strptime(startpoint, "%Y-%m-%d-%H-%M-%S").timestamp() - tmp_x[0].timestamp()
+#print(difference)
+#print(difference//(3600*24*30))
+    difference = difference//(3600*24*30)
+    extrapolationy[1] = extrapolationy[0] + partial_quota * (difference + 2)
+#print(extrapolationx,extrapolationy)
+    plt .plot(extrapolationx, extrapolationy, "black")
 
 # Issue: adds an additional unwanted line along the x-axis, using max() on each x to remove this?
 
@@ -275,10 +306,10 @@ if startpoint :
     beginning = datetime.datetime.strptime(startpoint, "%Y-%m-%d-%H-%M-%S").timestamp()
     end = datetime.datetime.strptime(startpoint, "%Y-%m-%d-%H-%M-%S").timestamp() + 365 * 24 * 3600
     beginning = beginning - 30*24*3600
-    print("beginning:", beginning)
+    #print("beginning:", beginning)
     end = end + 30*24*3600
     #end = datetime.datetime.fromtimestamp(end)
-    print("end:", end)
+    #print("end:", end)
 #temp_timestamp1 = x_start.timestamp()
 #temp_timestamp2 = x_end.timestamp()
 
@@ -301,7 +332,11 @@ axis.set_xlim(datetime.datetime.fromtimestamp(beginning), datetime.datetime.from
 
 #axis.set_xlim([datetime.datetime.fromtimestamp(int(temp_timestamp1 - (temp_timestamp2 - temp_timestamp1) / 20)),
                #datetime.datetime.fromtimestamp(int(temp_timestamp2 + (temp_timestamp2 - temp_timestamp1) / 20))])
-axis.set_ylim([y_start2 - (0.05 * y_end2),  tmp_y[-1]* 1.05])
+
+if yearly_quota:  #ensuring that the extrapolated quota is still in frame
+    axis.set_ylim([y_start2 - (0.05 * y_end2),  max(tmp_y[-1],extrapolationy[1])* 1.05])
+else:
+    axis.set_ylim([y_start2 - (0.05 * y_end2), tmp_y[-1] * 1.05])
 print("highest totaltime (last)",totaltime[-1])
 print("tmp_y[-1]",tmp_y[-1])
 print("length of totaltime",len(totaltime))

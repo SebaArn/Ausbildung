@@ -51,8 +51,15 @@ ap.add_argument('-s', dest='StartPoint', default="None", type=str, nargs='?')
 ap.add_argument('--start', dest='StartPoint', default="None", type=str, nargs='?')
 ap.add_argument('-p', dest='ProjectName', default="", type=str, nargs='?')
 ap.add_argument('--project', dest='ProjectName', default="", type=str, nargs='?')
+ap.add_argument('--min', dest='Minimum', default="", type=float, nargs='?')
+ap.add_argument('Minimum', dest='Minimum', default="", type=float, nargs='?')
+ap.add_argument('--max', dest='Maximum', default="", type=float, nargs='?')
+ap.add_argument('Maximum', dest='Maximum', default="", type=float, nargs='?')
+
 
 parameter = parser.parse_args()
+min = parser.Minimum
+max = parser.Maximum
 projectname = parser.ProjectName
 startpoint = parameter.StartPoint
 #print("Parameter:",parameter)
@@ -85,7 +92,7 @@ for i in range(len(Data)):
         formated = str(formated)[2:]
         #print("seconds:",translate_time_to_sec(formated))
         efficiency = translate_time_to_sec(formated) / (Data[i]['AllocCPUS']*(end_t-start_t).seconds)
-        if efficiency <= border:
+        if efficiency <= max and efficiency >= min:
             id = str(Data[i]['JobID'])
             id = id[2::]
             joblist.append(id)
