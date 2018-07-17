@@ -13,11 +13,11 @@ import re
 # determines quota-durations, current default value: 6 hours
 # suggested 30*24*60*60 for months, but that creates imprecise months, assumes 30 day per month
 # TODO: adapt seconds_per_instance depending on timerange
-seconds_per_instance = 30.25 * 24 * 60 * 60
+seconds_per_instance = 365.25/12 * 24 * 60 * 60
 # Issue: hasn't implemented a proper month solution.
 
 thresholds = [0.7, 1.1, 1.5]  # If the usage this month is below thresholds times the quota,
-colors = ['#add8e6', "#008000", '#ffa500']  # the "L" will be colored in the equally indexed color.
+colors = ['#81c478', "#008000", '#ffa500']  # the "L" will be colored in the equally indexed color.
 maximum = '#ff0000'  # if the usage is above the (highest threshold) * quota, the "L" will be colored in
 #  the given color 'maximum'.
 plt.rcParams['figure.figsize'] = [6, 4]  # set global parameters, plotter initialisation
@@ -40,39 +40,20 @@ def translate_date_to_sec(ymdhms):
         return temp_time.timestamp()  # then convert into unix-seconds (timestamp)
 
 def translate_time_to_sec(time):
-    #print(time)
     seconds = 0
     flagdays = False
     if '-' in time:
         flagdays = True
     time = time.split('.')[0]
-    #print(time)
     if len(time) < 2:
         return 0
-    #time = time[1:-1:]
     subsplits = time.split('-')
-    #print(subsplits)
-    #print("länge",len(subsplits))
     seconds = 0
     if flagdays:  # days are present
-        #print('days are present')
-        #print(subsplits[0],'Days')
-        #print('test')
-        #print(''.join(c for c in subsplits[0] if c.isdigit()))
         seconds += 24 * 3600 * int(''.join(c for c in subsplits[0] if c.isdigit()))
-        #print(time, "contains")
-        #print(int(''.join(c for c in subsplits[0] if c.isdigit())),"days")
-        #print("->",seconds,"seconds")
-        #print('that is ',seconds,"seconds")
     timesplitseconds = subsplits[-1].split(':')
-    #print(timesplitseconds)
-    #print(seconds,'seconds')
     for i in range(len(timesplitseconds)):
-        #print(timesplitseconds[-(i+1)],"timesplitseconds[-(i+1)]")
-        #print(''.join(c for c in (timesplitseconds[-(i + 1)]) if c.isdigit()),i)
         seconds += int(''.join(c for c in (timesplitseconds[-(i + 1)]) if c.isdigit())) * int(math.pow(60, int(i)))
-        print(seconds,'seconds')
-    #print('done')
     return seconds
 # separates the quotas into four categories, taking the ratios from thresholds and the results from colors
 def colorisation(value, comp):
@@ -98,34 +79,70 @@ def colorisation(value, comp):
 ap = argparse.ArgumentParser()
 ap.add_argument('Source', type=str, nargs=1)
 ap.add_argument('Output', type=str, nargs=1)
-ap.add_argument('Quota', type=int, nargs='?')
+ap.add_argument('--quota', dest='Quota', type=int, nargs=1)
+ap.add_argument('-q', dest='Quota', type=int, nargs=1)
+ap.add_argument('-s', dest='StartPoint', default="None", type=str, nargs='?')
+ap.add_argument('--start', dest='StartPoint', default="None", type=str, nargs='?')
+ap.add_argument('-p', dest='ProjectName', type=str, nargs='?')
+ap.add_argument('--project', dest='ProjectName', type=str, nargs='?')
+
 parameter = ap.parse_args()
+#print( "Result is ", parameter)
 # parse parameters into values, divide the Quota into months from the yearly quota.
 # convert input-parameters into data to interpret
 target_file = parameter.Output[0]
-yearly_quota = parameter.Quota
-if yearly_quota:
-    partial_quota = int(yearly_quota / 12)  # Script runs under the assumption, the inserted quota = 12* the instance-quota
+startpoint = parameter.StartPoint
+print(startpoint)
+startpoint = (str(startpoint)[::])
+print(startpoint)
+filter = parameter.ProjectName
+if parameter.Quota:
+    yearly_quota = parameter.Quota[0]
+else:
+    yearly_quota = None
+
+if yearly_quota :
+    partial_quota = int(yearly_quota / 12)
+    #print(partial_quota)# Script runs under the assumption, the inserted quota = 12* the instance-quota
 original = parameter.Source[0]
 
 # this type is used to seperate allocatedcpus, starttime, endtime and other currently unused sets of data from the rest
 data_type = np.dtype(
-    [('JobID', '|S256'), ('ReqCPUS', 'i4'), ('ReqMem', '|S256'), ('ReqNodes', 'i4'), ('AllocNodes', 'i4'),
+    [('JobID', '|S256'),('Account', '|S256'), ('ReqCPUS', 'i4'), ('ReqNodes', 'i4'), ('AllocNodes', 'i4'),
      ('AllocCPUS', 'i4'),
      ('NNodes', 'i4'), ('NCPUS', 'i4'), ('CPUTimeRAW', 'uint64'), ('ElapsedRaw', 'uint64'), ('Start', '|S256'),
      ('End', '|S256'),('TotalCPU', '|S256'),('UserCPU', '|S256'),('SystemCPU', '|S256')])
 
 
-# loads the file specified in original/Source, noteworth are 'allocCPUS', 'Start' and 'End' (3,26,27)
+# loads the file specified in original/Source, noteworthy are 'allocCPUS', 'Start' and 'End' (3,26,27)
 # the total data available is: "JobIDRaw,Account,User,ReqCPUS,ReqMem,ReqNodes,AllocNodes,AllocCPUS,NNodes,NCPUS,NTasks,
 # State,CPUTimeRAW,ElapsedRaw,TotalCPU,SystemCPU,UserCPU,MinCPU,AveCPU,MaxDiskRead,AveDiskRead,MaxDiskWrite,
 # AveDiskWrite,MaxRSS,AveRSS,Submit,Start,End,Layout,ReqTRES,AllocTRES,ReqGRES,AllocGRES,Cluster,Partition,
 # Submit,Start,End"
-Data = np.loadtxt(original, dtype=data_type, delimiter='|', skiprows=0, usecols=(0, 3, 4, 5, 6, 7, 8, 9, 12, 13, 26, 27,15,17,16)
+Data = np.loadtxt(original, dtype=data_type, delimiter='|', skiprows=0, usecols=(0,1, 3, 5, 6, 7, 8, 9, 12, 13, 26, 27,14,16,15)
                   )# currently only 3, 26,27 are used.
 #efficiencydata = np.loadtxt(original,dtype=eff_type, delimiter='|',skiprows=0,usecols=()
-print("first value in Data is",Data[0]['End'])
+#print("first value in Data is",Data[0]['End'])
 Data = Data[(Data[::]['End']).argsort()]
+
+print("startpoint is:", startpoint)
+if startpoint == "None":
+    print("no startvalue given")
+    x = Data[0][10]
+    x = (str(x)[2::])
+    x = x[:-1:]
+    print(x)
+    startpoint = x
+    #print((Data[0][10])[2::])
+    #startpoint = datetime.datetime.strptime(x, "%Y-%m-%d-%H-%M-%S")
+
+datetime.datetime.strptime(startpoint, "%Y-%m-%d-%H-%M-%S")
+print()
+print((datetime.datetime.strptime(startpoint, "%Y-%m-%d-%H-%M-%S")).timestamp())
+x = (datetime.datetime.strptime(startpoint, "%Y-%m-%d-%H-%M-%S")).timestamp()
+x += 3600*24*365
+print(datetime.datetime.fromtimestamp(x))
+
 plot_array = (np.zeros((Data.size, 3)))  # three values are needed for each data point, time, cputime and accumulated
 # Set a start date way in the future
 x_start = datetime.datetime.strptime("3000-01-01-01-01-01", "%Y-%m-%d-%H-%M-%S")  # a date far in the future
@@ -137,11 +154,10 @@ x = 0  # iterator variable, counts how many usable points of data exist
 # gathers the Cores used and multiplies with the time (divided by 3600) to generate Corehours.
 Systemt = []
 Usert = []
-Totalt = []
 for row in Data:
     #print(row['JobID'][2::])
-    if translate_date_to_sec(row['End']) > 0 and ("." not in str(row['JobID'])):  # this filters jobs that haven't ended, due to them returning "-1".
-        print(row['JobID'])
+    if translate_date_to_sec(row['End']) > 0 and ("." not in str(row['JobID'])) and filter in str(row['Account']):  # this filters jobs that haven't ended, due to them returning "-1".
+        #print(row['JobID'])
         end_t = datetime.datetime.strptime(str(row['End'], 'utf-8'), "%Y-%m-%d-%H-%M-%S")  # converts the string into a
         # datetime construct to interpret the endtime
         start_t = datetime.datetime.strptime(str(row['Start'], 'utf-8'), "%Y-%m-%d-%H-%M-%S")  # converts the string
@@ -156,46 +172,22 @@ for row in Data:
         y_start1 = min(y_start1, row['AllocCPUS'] * row["ElapsedRaw"]/3600)  # calculate the lowest -> hours
         y_end1 = max(y_end1, row['AllocCPUS'] * row["ElapsedRaw"] / 3600)  # calculate the highest -> hours
         plot_array[x, 0] = end_t.timestamp()  # writes the time of end into the array
-        print("start",start_t)
-        print("end",end_t)
-        print("hours:",row["ElapsedRaw"]/ 3600, "cpus:",row['AllocCPUS'])
-        plot_array[x, 1] = row['AllocCPUS'] * row["ElapsedRaw"] / 3600  # writes duration as hours * cores
-        print("result:", plot_array[x,1])
-
-        #print("cpus:",row['AllocCPUS'])
-        #print("hours:",(end_t - start_t).seconds / 3600.0)
-        #print("product =", (row['AllocCPUS'] * (end_t - start_t).seconds / 3600.0))
-        #print(row['UserCPU'],"/" ,row['SystemCPU'])
-        #print(row['SystemCPU'])
+        #print("start",start_t)
+        #print("end",end_t)
+        #print("hours:",row["ElapsedRaw"]/ 3600, "cpus:",row['AllocCPUS'])
+        plot_array[x, 1] = row['AllocCPUS'] * row["ElapsedRaw"] / 3600  # writes duration as  cores * hours
         formated = row['SystemCPU']
-        #print(formated,'systemcpu')
         formated = str(formated)[2:]
-        #print(formated)
         if len(Systemt) == 0:
             Systemt.append(translate_time_to_sec(formated)/3600)
         else:
             Systemt.append(translate_time_to_sec(formated)/3600+Systemt[-1])
-        #Systemt += translate_time_to_sec(formated)
         formated = row['UserCPU']
-        #print(formated,'usercpu')
         formated = str(formated)[2:]
-        #Usert += translate_time_to_sec(formated)
         if len(Usert) == 0:
             Usert.append(translate_time_to_sec(formated)/3600)
         else:
             Usert.append(translate_time_to_sec(formated)/3600+Usert[-1])
-        formated = row['TotalCPU']
-        #print(formated,'usercpu')
-        formated = str(formated)[2:]
-        #Usert += translate_time_to_sec(formated)
-        if len(Totalt) == 0:
-            Totalt.append(translate_time_to_sec(formated)/3600)
-        else:
-            Totalt.append(translate_time_to_sec(formated)+Totalt[-1]/3600)
-        #Systemt += int(''.join(list(row['SystemCPU'])[2::]).split(':'))
-        #Usert += int(''.join(list(row['UserCPU'])[2::]))
-        # into array (cpuruntime)
-        print("totaltime",Totalt[-1])
         x = x + 1  # if data is usable, increments
 
 # creates a cutoff after the array runs out of values (several data points were skipped, results in 0s) and sorts it.
@@ -277,14 +269,23 @@ axis = plt.gca()  # for plotting/saving the plot as it's own image
 # Issue: adds an additional unwanted line along the x-axis, using max() on each x to remove this?
 
 # Sets the visual borders for the graphs; area of occurring values (main graph) +- 5%.
-temp_timestamp1 = x_start.timestamp()
-temp_timestamp2 = x_end.timestamp()
+
+beginning =  x_start.timestamp()
+if startpoint :
+    beginning = datetime.datetime.strptime(startpoint, "%Y-%m-%d-%H-%M-%S").timestamp()
+    end = datetime.datetime.strptime(startpoint, "%Y-%m-%d-%H-%M-%S").timestamp() + 365 * 24 * 3600
+    beginning = beginning - 30*24*3600
+    print("beginning:", beginning)
+    end = end + 30*24*3600
+    #end = datetime.datetime.fromtimestamp(end)
+    print("end:", end)
+#temp_timestamp1 = x_start.timestamp()
+#temp_timestamp2 = x_end.timestamp()
 
 
 print('the total usertime is ', Usert[-1], "hours")
 print('the total Systemtime is ', Systemt[-1], "hours")
 print('together they are', Usert[-1]+Systemt[-1], "hours")
-print('highest totalt measured for reference:', Totalt[-1], "hours")
 print('and the total number of corehours is', tmp_y[-1])
 efficiency = ((Usert[-1] + Systemt[-1]))/tmp_y[-1]
 #efficiency = totaltime/tmp_y[-1]
@@ -295,16 +296,14 @@ if efficiency < 0 or efficiency > 1:
 totaltime = np.zeros(len(tmp_x))
 for i in range(0,len(totaltime)):
     totaltime[i] = Usert[i]+Systemt[i]
-    #print(totaltime[i])
 
+axis.set_xlim(datetime.datetime.fromtimestamp(beginning), datetime.datetime.fromtimestamp(end))
 
-
-axis.set_xlim([datetime.datetime.fromtimestamp(int(temp_timestamp1 - (temp_timestamp2 - temp_timestamp1) / 20)),
-               datetime.datetime.fromtimestamp(int(temp_timestamp2 + (temp_timestamp2 - temp_timestamp1) / 20))])
+#axis.set_xlim([datetime.datetime.fromtimestamp(int(temp_timestamp1 - (temp_timestamp2 - temp_timestamp1) / 20)),
+               #datetime.datetime.fromtimestamp(int(temp_timestamp2 + (temp_timestamp2 - temp_timestamp1) / 20))])
 axis.set_ylim([y_start2 - (0.05 * y_end2),  tmp_y[-1]* 1.05])
 print("highest totaltime (last)",totaltime[-1])
 print("tmp_y[-1]",tmp_y[-1])
-#totaltime.sort()
 print("length of totaltime",len(totaltime))
 print("length of tmp_y",len(tmp_y))
 print("length of tmp_x",len(tmp_x))
@@ -312,15 +311,10 @@ print("length of tmp_x",len(tmp_x))
 #print(max(totaltime),max)
 #print((totaltime[len(totaltime)//2]))
 #totaltime.sort()
-plt.plot(tmp_x, totaltime, '#eeff7f')
-plt.fill_between(tmp_x, 0, totaltime, color='#eeff7f', alpha=0.8)
-plt.plot(tmp_x, tmp_y, 'grey', fillstyle='bottom', alpha=0.7)  # plotting the main graph (cores * hours)
-plt.fill_between(tmp_x, 0, tmp_y, color="white", alpha=0.65)
-#totaly = np.zeros(len(Totalt))
-#for i in range(len(Totalt)):
-#    totaly[i] = Totalt[i]/3600
-
-
+plt.plot(tmp_x, totaltime, '#d9e72e')
+plt.fill_between(tmp_x, 0, totaltime, color='#d9e72e', alpha=0.99)
+plt.plot(tmp_x, tmp_y, 'grey', fillstyle='bottom', alpha=0.8)  # plotting the main graph (cores * hours)
+plt.fill_between(tmp_x, 0, tmp_y, color="white", alpha=0.7)
 #plt.plot(tmp_x,totaly)
 
 # Creates a grid in the image to aid the viewer in visually processing the data.
