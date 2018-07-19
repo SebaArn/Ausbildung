@@ -5,6 +5,7 @@ from matplotlib.patches import Rectangle
 import datetime  # Used to convert our ascii dates into unix-seconds
 import argparse  # used to interpret parameters
 import math
+import sys
 import re
 # This code has unfixed issues, they are marked by the indicator "Issue:"
 
@@ -127,11 +128,26 @@ data_type = np.dtype(
 # State,CPUTimeRAW,ElapsedRaw,TotalCPU,SystemCPU,UserCPU,MinCPU,AveCPU,MaxDiskRead,AveDiskRead,MaxDiskWrite,
 # AveDiskWrite,MaxRSS,AveRSS,Submit,Start,End,Layout,ReqTRES,AllocTRES,ReqGRES,AllocGRES,Cluster,Partition,
 # Submit,Start,End"
+#print("testing")
 Data = np.loadtxt(original, dtype=data_type, delimiter='|', skiprows=0, usecols=(0,1, 3, 5, 6, 7, 8, 9, 12, 13, 26, 27,14,16,15)
                   )# currently only 3, 26,27 are used.
 #efficiencydata = np.loadtxt(original,dtype=eff_type, delimiter='|',skiprows=0,usecols=()
 #print("first value in Data is",Data[0]['End'])
 Data = Data[(Data[::]['End']).argsort()]
+#print(len(Data))
+if len(Data) < 1:
+    sys.stderr.write("No data in file.")
+    sys.exit()
+
+
+highestdata = max(Data[::]['End'])
+highestdata = str(highestdata)
+highestdata = highestdata[2:-1]
+if highestdata < startpoint:
+    sys.stderr.write('The startpoint is after the latest date in the file')
+    sys.exit()
+#print("highest:", highestdata)
+#print("test")
 
 #print("startpoint is:", startpoint)
 if startpoint == "None":
@@ -198,6 +214,10 @@ for row in Data:
             Usert.append(translate_time_to_sec(formated)/3600+Usert[-1])
         x = x + 1  # if data is usable, increments
 
+#print("länge:",len(Usert))
+if len(Usert) < 1:
+    sys.stderr.write("No project in the file fits the given Projectname")
+    sys.exit()
 # creates a cutoff after the array runs out of values (several data points were skipped, results in 0s) and sorts it.
 plot_array = plot_array[0:x][:]
 plot_array = plot_array[plot_array[:, 0].argsort()]
@@ -256,16 +276,18 @@ for x2 in range(0, np.size(tmp_x2)-1):
 tmp_x3 = tmp_x3[0:int(number_of_instances) * 3:1]
 
 
-pc = PatchCollection
+print(len(tmp_y2))
+
 # determines the color via colorisation and then plots three points, stops before the last interval to draw
 # sends the span of bottom left corner and top left corner, compares with span between top right and next bottom left
-for iterator in range(0, int(number_of_instances - 1)):  # not possible for the last area, hence skipping it.
-    col = colorisation(tmp_y2[iterator * 3 + 3] - tmp_y2[iterator * 3], tmp_y2[iterator * 3 + 2] - tmp_y2[iterator * 3])
-    coordsx = ([tmp_x3[iterator * 3 + 1], tmp_x3[iterator * 3 + 2]])
-    coordsy= [tmp_y2[iterator * 3+1], tmp_y2[iterator * 3 + 2]]
+if yearly_quota:
+    for iterator in range(0, int(number_of_instances - 1)):  # not possible for the last area, hence skipping it.
+        col = colorisation(tmp_y2[iterator * 3 + 3] - tmp_y2[iterator * 3], tmp_y2[iterator * 3 + 2] - tmp_y2[iterator * 3])
+        coordsx = ([tmp_x3[iterator * 3 + 1], tmp_x3[iterator * 3 + 2]])
+        coordsy= [tmp_y2[iterator * 3+1], tmp_y2[iterator * 3 + 2]]
     #plt.plot([tmp_x3[iterator * 3], tmp_x3[iterator * 3 + 1], tmp_x3[iterator * 3 + 2]],
     #         [tmp_y2[iterator * 3], tmp_y2[iterator * 3 + 1], tmp_y2[iterator * 3 + 2]], col)
-    plt.fill_between(coordsx, 0, coordsy, color=col, alpha=0.8)
+        plt.fill_between(coordsx, 0, coordsy, color=col, alpha=0.8)
 
 # determines the last interval's color and draws it (uses the highest
 # recorded value as the end value of the ongoing timespan).
@@ -337,11 +359,11 @@ if yearly_quota:  #ensuring that the extrapolated quota is still in frame
     axis.set_ylim([y_start2 - (0.05 * y_end2),  max(tmp_y[-1],extrapolationy[1])* 1.05])
 else:
     axis.set_ylim([y_start2 - (0.05 * y_end2), tmp_y[-1] * 1.05])
-print("highest totaltime (last)",totaltime[-1])
-print("tmp_y[-1]",tmp_y[-1])
-print("length of totaltime",len(totaltime))
-print("length of tmp_y",len(tmp_y))
-print("length of tmp_x",len(tmp_x))
+#print("highest totaltime (last)",totaltime[-1])
+#print("tmp_y[-1]",tmp_y[-1])
+#print("length of totaltime",len(totaltime))
+#print("length of tmp_y",len(tmp_y))
+#print("length of tmp_x",len(tmp_x))
 #print(min(totaltime),min)
 #print(max(totaltime),max)
 #print((totaltime[len(totaltime)//2]))
