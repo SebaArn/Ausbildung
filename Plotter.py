@@ -140,12 +140,7 @@ if len(Data) < 1:
     sys.exit()
 
 
-highestdata = max(Data[::]['End'])
-highestdata = str(highestdata)
-highestdata = highestdata[2:-1]
-if highestdata < startpoint:
-    sys.stderr.write('The startpoint is after the latest date in the file')
-    sys.exit()
+
 #print("highest:", highestdata)
 #print("test")
 
@@ -160,6 +155,13 @@ if startpoint == "None":
     #print((Data[0][10])[2::])
     #startpoint = datetime.datetime.strptime(x, "%Y-%m-%d-%H-%M-%S")
 
+
+highestdata = max(Data[::]['End'])
+highestdata = str(highestdata)
+highestdata = highestdata[2:-1]
+if highestdata < startpoint:
+    sys.stderr.write('The startpoint is after the latest date in the file')
+    sys.exit()
 datetime.datetime.strptime(startpoint, "%Y-%m-%d-%H-%M-%S")
 #print()
 #print((datetime.datetime.strptime(startpoint, "%Y-%m-%d-%H-%M-%S")).timestamp())
@@ -216,7 +218,7 @@ for row in Data:
 
 #print("länge:",len(Usert))
 if len(Usert) < 1:
-    sys.stderr.write("No project in the file fits the given Projectname")
+    sys.stderr.write("No project in the given timeframe fits the given Projectname")
     sys.exit()
 # creates a cutoff after the array runs out of values (several data points were skipped, results in 0s) and sorts it.
 plot_array = plot_array[0:x][:]
@@ -276,7 +278,7 @@ for x2 in range(0, np.size(tmp_x2)-1):
 tmp_x3 = tmp_x3[0:int(number_of_instances) * 3:1]
 
 
-print(len(tmp_y2))
+#print(len(tmp_y2))
 
 # determines the color via colorisation and then plots three points, stops before the last interval to draw
 # sends the span of bottom left corner and top left corner, compares with span between top right and next bottom left
