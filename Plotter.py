@@ -7,7 +7,6 @@ import argparse  # used to interpret parameters
 import math
 import sys
 import re
-# This code has unfixed issues, they are marked by the indicator "Issue:"
 
 # This program creates an image that visualizes a given log file in relation to a given quota.
 
@@ -15,11 +14,10 @@ import re
 # suggested 30*24*60*60 for months, but that creates imprecise months, assumes 30 day per month
 # TODO: adapt seconds_per_instance depending on timerange
 seconds_per_instance = 365.25/12 * 24 * 60 * 60
-# Issue: hasn't implemented a proper month solution.
 
 thresholds = [0.7, 1.1, 1.5]  # If the usage this month is below thresholds times the quota,
-colors = ['#81c478', "#008000", '#ffa500']  # the "L" will be colored in the equally indexed color.
-maximum = '#ff0000'  # if the usage is above the (highest threshold) * quota, the "L" will be colored in
+colors = ['#81c478', "#008000", '#ffa500']  # the quota will be colored in the equally indexed color.
+maximum = '#ff0000'  # if the usage is above the (highest threshold) * quota, the Quota will be colored in
 #  the given color 'maximum'.
 plt.rcParams['figure.figsize'] = [6, 4]  # set global parameters, plotter initialisation
 
@@ -41,7 +39,6 @@ def translate_date_to_sec(ymdhms):
         return temp_time.timestamp()  # then convert into unix-seconds (timestamp)
 
 def translate_time_to_sec(time):
-    seconds = 0
     flagdays = False
     if '-' in time:
         flagdays = True
@@ -56,6 +53,7 @@ def translate_time_to_sec(time):
     for i in range(len(timesplitseconds)):
         seconds += int(''.join(c for c in (timesplitseconds[-(i + 1)]) if c.isdigit())) * int(math.pow(60, int(i)))
     return seconds
+
 # separates the quotas into four categories, taking the ratios from thresholds and the results from colors
 def colorisation(value, comp):
     """
@@ -74,9 +72,7 @@ def colorisation(value, comp):
         return maximum
 
 
-# Reads parameter inputs. Three are expected: two filenames and one Number >0.
-# if the number is 0, an error is thrown, numbers below 0 will not throw an error, but
-# not result in meaningful quota-visualisations
+# Reads parameter inputs.
 ap = argparse.ArgumentParser()
 ap.add_argument('Source', type=str, nargs=1)
 ap.add_argument('Output', type=str, nargs=1)
@@ -88,18 +84,13 @@ ap.add_argument('-p', dest='ProjectName', type=str, nargs='?')
 ap.add_argument('--project', dest='ProjectName', type=str, nargs='?')
 
 parameter = ap.parse_args()
-#print( "Result is ", parameter)
 # parse parameters into values, divide the Quota into months from the yearly quota.
 # convert input-parameters into data to interpret
 target_file = parameter.Output[0]
 startpoint = parameter.StartPoint
-#print(startpoint)
-#print(len(startpoint))
 if len(startpoint) == 10: #appends hours, minutes and seconds if only date given
       startpoint += "-00-00-00"
 startpoint = (str(startpoint)[::])
-#print(startpoint)
-#print (parameter.ProjectName)
 if parameter.ProjectName is not None:  #if no name is given, sets the filter to ""
     filter = parameter.ProjectName
 else:
@@ -128,9 +119,8 @@ data_type = np.dtype(
 # State,CPUTimeRAW,ElapsedRaw,TotalCPU,SystemCPU,UserCPU,MinCPU,AveCPU,MaxDiskRead,AveDiskRead,MaxDiskWrite,
 # AveDiskWrite,MaxRSS,AveRSS,Submit,Start,End,Layout,ReqTRES,AllocTRES,ReqGRES,AllocGRES,Cluster,Partition,
 # Submit,Start,End"
-#print("testing")
-Data = np.loadtxt(original, dtype=data_type, delimiter='|', skiprows=0, usecols=(0,1, 3, 5, 6, 7, 8, 9, 12, 13, 26, 27,14,16,15)
-                  )# currently only 3, 26,27 are used.
+Data = np.loadtxt(original, dtype=data_type, delimiter='|', skiprows=0, usecols=(0, 1, 3, 5, 6, 7, 8, 9, 12, 13, 26, 27, 14, 16, 15)
+                  )
 #efficiencydata = np.loadtxt(original,dtype=eff_type, delimiter='|',skiprows=0,usecols=()
 #print("first value in Data is",Data[0]['End'])
 Data = Data[(Data[::]['End']).argsort()]
@@ -139,20 +129,11 @@ if len(Data) < 1:
     sys.stderr.write("No data in file.")
     sys.exit()
 
-
-
-#print("highest:", highestdata)
-#print("test")
-
-#print("startpoint is:", startpoint)
 if startpoint == "None":
-    #print("no startvalue given")
     x = Data[0][10]
     x = (str(x)[2::])
     x = x[:-1:]
-    #print(x)
     startpoint = x
-    #print((Data[0][10])[2::])
     #startpoint = datetime.datetime.strptime(x, "%Y-%m-%d-%H-%M-%S")
 
 
@@ -163,11 +144,8 @@ if highestdata < startpoint:
     sys.stderr.write('The startpoint is after the latest date in the file')
     sys.exit()
 datetime.datetime.strptime(startpoint, "%Y-%m-%d-%H-%M-%S")
-#print()
-#print((datetime.datetime.strptime(startpoint, "%Y-%m-%d-%H-%M-%S")).timestamp())
 x = (datetime.datetime.strptime(startpoint, "%Y-%m-%d-%H-%M-%S")).timestamp()
 x += 3600*24*365
-#print(datetime.datetime.fromtimestamp(x))
 
 plot_array = (np.zeros((Data.size, 3)))  # three values are needed for each data point, time, cputime and accumulated
 # Set a start date way in the future
@@ -216,7 +194,7 @@ for row in Data:
             Usert.append(translate_time_to_sec(formated)/3600+Usert[-1])
         x = x + 1  # if data is usable, increments
 
-#print("länge:",len(Usert))
+# Error checks (for lack of valid names in timeframe)
 if len(Usert) < 1:
     sys.stderr.write("No project in the given timeframe fits the given Projectname")
     sys.exit()
@@ -338,13 +316,14 @@ if startpoint :
 #temp_timestamp2 = x_end.timestamp()
 
 
+# Print statements, to give feedback either onscreen or into a dedicated file to be piped into.
 print('the total usertime is ', Usert[-1], "hours")
 print('the total Systemtime is ', Systemt[-1], "hours")
 print('together they are', Usert[-1]+Systemt[-1], "hours")
 print('and the total number of corehours is', tmp_y[-1])
 efficiency = ((Usert[-1] + Systemt[-1]))/tmp_y[-1]
-#efficiency = totaltime/tmp_y[-1]
-print('The total efficiency is',int(efficiency*10000)/100, "%")
+# Added rounding to the efficiency percentage feedback.
+print('The total efficiency is',int(efficiency*10000)/100+0.005, "%")
 if efficiency < 0 or efficiency > 1:
     print("Efficiency is outside of it's boundaries, valid is only between 0 and 1")
 
@@ -357,9 +336,9 @@ axis.set_xlim(datetime.datetime.fromtimestamp(beginning), datetime.datetime.from
 #axis.set_xlim([datetime.datetime.fromtimestamp(int(temp_timestamp1 - (temp_timestamp2 - temp_timestamp1) / 20)),
                #datetime.datetime.fromtimestamp(int(temp_timestamp2 + (temp_timestamp2 - temp_timestamp1) / 20))])
 
-if yearly_quota:  #ensuring that the extrapolated quota is still in frame
+if yearly_quota:  # ensuring that the extrapolated quota is still in frame
     axis.set_ylim([y_start2 - (0.05 * y_end2),  max(tmp_y[-1],extrapolationy[1])* 1.05])
-else:
+else:  # No quota given, image is focused around occupied and utilized resources.
     axis.set_ylim([y_start2 - (0.05 * y_end2), tmp_y[-1] * 1.05])
 #print("highest totaltime (last)",totaltime[-1])
 #print("tmp_y[-1]",tmp_y[-1])
@@ -370,10 +349,10 @@ else:
 #print(max(totaltime),max)
 #print((totaltime[len(totaltime)//2]))
 #totaltime.sort()
-plt.plot(tmp_x, totaltime, '#d9e72e')
-plt.fill_between(tmp_x, 0, totaltime, color='#d9e72e', alpha=0.99)
+plt.plot(tmp_x, totaltime, '#d9e72e') #plotting the TotatlCPU Graph
+plt.fill_between(tmp_x, 0, totaltime, color='#d9e72e', alpha=0.99) # plotting the area below TotalCPU graph
 plt.plot(tmp_x, tmp_y, 'grey', fillstyle='bottom', alpha=0.8)  # plotting the main graph (cores * hours)
-plt.fill_between(tmp_x, 0, tmp_y, color="white", alpha=0.7)
+plt.fill_between(tmp_x, 0, tmp_y, color="white", alpha=0.7)  # plotting the area below the corehours graph
 #plt.plot(tmp_x,totaly)
 
 # Creates a grid in the image to aid the viewer in visually processing the data.
