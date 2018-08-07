@@ -1,14 +1,14 @@
 import sys
 import numpy as np  # used to handle numbers, data structures and mathematical functions
-import matplotlib.pyplot as plt  # MATLAB-like plotting
-from matplotlib.collections import PatchCollection
-from matplotlib.patches import Rectangle
 import datetime  # Used to convert our ascii dates into unix-seconds
 import argparse  # used to interpret parameters
 import math
 import sys
 import re
 
+
+# TODO: Resolve issue with "Unknown" being the highest, resulting in the programm not propperly evaluating if
+# TODO: startpoint is too late.
 
 border = 0.08
 
@@ -111,7 +111,7 @@ highestdata = max(Data[::]['End'])
 highestdata = str(highestdata)
 highestdata = highestdata[2:-1]
 #print(highestdata,startpoint)
-print("highest",highestdata)
+#print("highest",highestdata)
 if highestdata < startpoint:
     sys.stderr.write('The startpoint is after the latest date in the file')
     sys.exit()
@@ -119,14 +119,14 @@ if highestdata < startpoint:
 sp = 0
 sp = 0
 #print(startpoint)
-for i in range(len(Data)):
-    x = str(Data[i]["End"])[2:-1:]
-    #print(x)
-    if x != "Unknown":
-        if datetime.datetime.strptime(x, "%Y-%m-%d-%H-%M-%S").timestamp() >= startdatetime:
-            sp = i
-            continue
-            #TODO: implement
+#for i in range(len(Data)):
+#    x = str(Data[i]["End"])[2:-1:]
+#    #print(x)
+#    if x != "Unknown":
+#        if datetime.datetime.strptime(x, "%Y-%m-%d-%H-%M-%S").timestamp() >= startdatetime:
+#            sp = i
+#            continue
+#            #
 
 
 joblist = []
@@ -139,8 +139,8 @@ for i in range(len(Data)):
     #print(x)
     #check for > sp here?
     #print(str(Data[i]['End'])[2:-1], startpoint)
-    if translate_date_to_sec(Data[i]['End']) > 0 and projectname in str(Data[i]['Account']) and '.' not in str(Data[i]['JobID']) and str(Data[i]['End'])[2:-1] >= startpoint:
-
+    # and '.' not in str(Data[i]['JobID'])
+    if translate_date_to_sec(Data[i]['End']) > 0 and projectname in str(Data[i]['Account'])and str(Data[i]['End'])[2:-1] >= startpoint:
         start_t = datetime.datetime.strptime(str(Data[i]['Start'], 'utf-8'), "%Y-%m-%d-%H-%M-%S")
         end_t = datetime.datetime.strptime(str(Data[i]['End'], 'utf-8'), "%Y-%m-%d-%H-%M-%S")
         if (end_t-start_t).seconds < 1:
@@ -158,7 +158,7 @@ for i in range(len(Data)):
             acc = acc[2:-1:]
             #print(id)
             #print("efficiency",efficiency)
-            s = "Job nr. " + id + " (account =)" + acc + " has the efficiency " + str(efficiency)
+            s = "Job nr. " + id + " (account =)" + acc + " has the efficiency " + str(int(abs(efficiency*1000))/10)+"%"
             textlist.append(s)
 
 if len(textlist) == 0:
