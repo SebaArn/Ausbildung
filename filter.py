@@ -83,10 +83,10 @@ else:
 # print("Original:",parameter.original)
 original = str(parameter.Source[0])
 data_type = np.dtype(
-    [('JobID', '|S256'), ('Account', '|S256'),('ReqCPUS', 'i4'), ('ReqMem', '|S256'), ('ReqNodes', 'i4'), ('AllocNodes', 'i4'),
-     ('AllocCPUS', 'i4'),
-     ('NNodes', 'i4'), ('NCPUS', 'i4'), ('CPUTimeRAW', 'uint64'), ('ElapsedRaw', 'uint64'), ('Start', '|S256'),
-     ('End', '|S256'),('TotalCPU', '|S256'),('UserCPU', '|S256'),('SystemCPU', '|S256')])
+    [('JobID', '|S256'), ('Account', '|S256'),('ReqCPUS', 'i4'), ('ReqMem', '|S256'), ('ReqNodes', 'i4'),
+     ('AllocNodes', 'i4'), ('AllocCPUS', 'i4'), ('NNodes', 'i4'), ('NCPUS', 'i4'), ('CPUTimeRAW', 'uint64'),
+     ('ElapsedRaw', 'uint64'), ('Start', '|S256'), ('End', '|S256'), ('TotalCPU', '|S256'), ('UserCPU', '|S256'),
+     ('SystemCPU', '|S256')])
 #print(original)
 Data = np.loadtxt(original, dtype=data_type, delimiter='|', skiprows=0, usecols=(0, 1, 3, 4, 5, 6, 7, 8, 9, 12, 13, 26, 27,15,17,16))
 Data = Data[(Data[::]['End']).argsort()]
@@ -140,7 +140,7 @@ for i in range(len(Data)):
     #check for > sp here?
     #print(str(Data[i]['End'])[2:-1], startpoint)
     # and '.' not in str(Data[i]['JobID'])
-    if translate_date_to_sec(Data[i]['End']) > 0 and projectname in str(Data[i]['Account'])and str(Data[i]['End'])[2:-1] >= startpoint:
+    if translate_date_to_sec(Data[i]['End']) > 0 and '.' not in str(Data[i]['JobID']) and projectname in str(Data[i]['Account'])and str(Data[i]['End'])[2:-1] >= startpoint:
         start_t = datetime.datetime.strptime(str(Data[i]['Start'], 'utf-8'), "%Y-%m-%d-%H-%M-%S")
         end_t = datetime.datetime.strptime(str(Data[i]['End'], 'utf-8'), "%Y-%m-%d-%H-%M-%S")
         if (end_t-start_t).seconds < 1:
@@ -158,7 +158,9 @@ for i in range(len(Data)):
             acc = acc[2:-1:]
             #print(id)
             #print("efficiency",efficiency)
-            s = "Job nr. " + id + " (account =)" + acc + " has the efficiency " + str(int(abs(efficiency*1000))/10)+"%"
+            s = "Job nr. " + str(id).ljust(15) + " (account = " + acc + ") has the efficiency " + str(int(abs(efficiency*1000))/10).ljust(5)+"%."\
+                + " Runtime in hours:"+str((Data[i]['ElapsedRaw']//360)/10).ljust(6)+" number of CPUs:"+str(Data[i]['NCPUS']).ljust(4)+' number of nodes:'\
+                +str(Data[i]['NNodes']).ljust(4)+". Memory:"+(str(Data[i]['ReqMem'])[2:-1]).ljust(9)+". Corehours:"+str(int(Data[i]['CPUTimeRAW']//360)/10)
             textlist.append(s)
 
 if len(textlist) == 0:

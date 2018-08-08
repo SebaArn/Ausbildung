@@ -6,6 +6,7 @@ import datetime  # Used to convert our ascii dates into unix-seconds
 import argparse  # used to interpret parameters
 import math
 import sys
+import matplotlib.patches as mpatches
 import re
 
 # This program creates an image that visualizes a given log file in relation to a given quota.
@@ -74,8 +75,15 @@ def colorisation(value, comp):
 
 # Reads parameter inputs.
 ap = argparse.ArgumentParser()
-ap.add_argument('Source', type=str, nargs=1)
+ap.add_argument('Source', type=str, nargs="+")  # TODO: implement option of inputting multiple files
+#ap.add_argument('Source', type=argparse.Filetype('r'), nargs='+')
+
 ap.add_argument('Output', type=str, nargs=1)
+
+#ap.add_argument('-src', dest='Source', type=argparse.Filetype('r'), nargs='+')
+
+
+
 ap.add_argument('--quota', dest='Quota', type=int, nargs=1)
 ap.add_argument('-q', dest='Quota', type=int, nargs=1)
 ap.add_argument('-s', dest='StartPoint', default="None", type=str, nargs='?')
@@ -105,7 +113,7 @@ if yearly_quota :
     partial_quota = int(yearly_quota / 12)
     #print(partial_quota)# Script runs under the assumption, the inserted quota = 12* the instance-quota
 original = parameter.Source[0]
-
+print(parameter.Source)
 # this type is used to seperate allocatedcpus, starttime, endtime and other currently unused sets of data from the rest
 data_type = np.dtype(
     [('JobID', '|S256'),('Account', '|S256'), ('ReqCPUS', 'i4'), ('ReqNodes', 'i4'), ('AllocNodes', 'i4'),
@@ -349,7 +357,21 @@ else:  # No quota given, image is focused around occupied and utilized resources
 #print(max(totaltime),max)
 #print((totaltime[len(totaltime)//2]))
 #totaltime.sort()
+
+
+red_patch = mpatches.Patch(color='#ff0000', alpha=0.7, label='>=150%')
+orange_patch = mpatches.Patch(color='#ffa500', alpha=0.7, label='>=110%,<150%')
+green_patch = mpatches.Patch(color='#008000', alpha=0.8, label='>=70%,<110%')
+lightg_patch = mpatches.Patch(color='#81c478', alpha=0.8, label='<70%')
+grey_patch = mpatches.Patch(color='grey', alpha=0.7, label='Occupied Ressources')
+yellow_patch = mpatches.Patch(color='#d9e72e', alpha=0.49, label='Utilized Ressources')
+
 plt.plot(tmp_x, totaltime, '#d9e72e') #plotting the TotatlCPU Graph
+#              '#81c478', "#008000", '#ffa500' '#ff0000'
+if yearly_quota :
+    plt.legend(handles=[red_patch, orange_patch, green_patch, lightg_patch, grey_patch, yellow_patch])
+else:
+    plt.legend(handles=[grey_patch, yellow_patch])
 plt.fill_between(tmp_x, 0, totaltime, color='#d9e72e', alpha=0.99) # plotting the area below TotalCPU graph
 plt.plot(tmp_x, tmp_y, 'grey', fillstyle='bottom', alpha=0.8)  # plotting the main graph (cores * hours)
 plt.fill_between(tmp_x, 0, tmp_y, color="white", alpha=0.7)  # plotting the area below the corehours graph
