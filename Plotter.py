@@ -39,6 +39,36 @@ def translate_date_to_sec(ymdhms):
         temp_time = datetime.datetime.strptime(str(ymdhms, 'utf-8'), "%Y-%m-%d-%H-%M-%S")  # convert into datetime
         return temp_time.timestamp()  # then convert into unix-seconds (timestamp)
 
+
+def essentialpar(parameters):
+    if (len(parameters)) < 2:
+        sys.stderr.write("This file needs both an input and an output")
+        sys.exit()
+    sourceskey, sourcesnok, output, optpara = [], [], [], []
+    while parameters:
+        if "-src=" == parameters[0][:5]:
+            sourceskey.append(parameters[0][5:])
+            parameters = parameters[1:]
+        else:
+            if "-o" == parameters[0][:2]:
+                output.append(parameters[0][3:])
+                parameters = parameters[1:]
+            else:
+                if "-" in parameters[0][0:2]:
+                    optpara.append(parameters[0])
+                    parameters = parameters[1:]
+                else:
+                    sourcesnok.append(parameters[0])
+                    parameters = parameters[1:]
+    if len(output) >= 2:
+        sys.stderr.write("Only 1 output file allowed")
+        sys.exit()
+    if not output:
+        output.append(sourcesnok[-1])
+        sourcesnok = sourcesnok[:-1]
+    sources = sourceskey+sourcesnok
+    return [sources, output, optpara]
+
 def translate_time_to_sec(time):
     flagdays = False
     if '-' in time:
@@ -73,13 +103,15 @@ def colorisation(value, comp):
         return maximum
 
 
+
 # Reads parameter inputs.
 ap = argparse.ArgumentParser()
-ap.add_argument('Source', type=str, nargs="+")  # TODO: implement option of inputting multiple files
+#ap.add_argument('Source', type=str, nargs="+")  # TODO: implement option of inputting multiple files
 #ap.add_argument('Source', type=argparse.Filetype('r'), nargs='+')
 
-ap.add_argument('Output', type=str, nargs=1)
-
+#ap.add_argument('Output', type=str, nargs=1)
+ap.add_argument("-o",nargs=1)
+ap.add_argument("-src",nargs='*')
 #ap.add_argument('-src', dest='Source', type=argparse.Filetype('r'), nargs='+')
 
 
@@ -90,30 +122,33 @@ ap.add_argument('-s', dest='StartPoint', default="None", type=str, nargs='?')
 ap.add_argument('--start', dest='StartPoint', default="None", type=str, nargs='?')
 ap.add_argument('-p', dest='ProjectName', type=str, nargs='?')
 ap.add_argument('--project', dest='ProjectName', type=str, nargs='?')
-
-parameter = ap.parse_args()
+ap.add_argument('rest',type=str,nargs='*')
+oparameters = ap.parse_args()
+eparameters = essentialpar((sys.argv[1:]))
 # parse parameters into values, divide the Quota into months from the yearly quota.
 # convert input-parameters into data to interpret
-target_file = parameter.Output[0]
-startpoint = parameter.StartPoint
+target_file = eparameters[1][0]
+
+startpoint = oparameters.StartPoint
 if len(startpoint) == 10: #appends hours, minutes and seconds if only date given
       startpoint += "-00-00-00"
 startpoint = (str(startpoint)[::])
-if parameter.ProjectName is not None:  #if no name is given, sets the filter to ""
-    filter = parameter.ProjectName
+if oparameters.ProjectName is not None:  #if no name is given, sets the filter to ""
+    filter = oparameters.ProjectName
+    print(filter)
 else:
     filter = ""
 
-if parameter.Quota:
-    yearly_quota = parameter.Quota[0]
+if oparameters.Quota:
+    yearly_quota = oparameters.Quota[0]
 else:
     yearly_quota = None
 
 if yearly_quota :
     partial_quota = int(yearly_quota / 12)
     #print(partial_quota)# Script runs under the assumption, the inserted quota = 12* the instance-quota
-original = parameter.Source[0]
-print(parameter.Source)
+originals = eparameters[0]
+#print(parameter.Source)
 # this type is used to seperate allocatedcpus, starttime, endtime and other currently unused sets of data from the rest
 data_type = np.dtype(
     [('JobID', '|S256'),('Account', '|S256'), ('ReqCPUS', 'i4'), ('ReqNodes', 'i4'), ('AllocNodes', 'i4'),
@@ -127,16 +162,58 @@ data_type = np.dtype(
 # State,CPUTimeRAW,ElapsedRaw,TotalCPU,SystemCPU,UserCPU,MinCPU,AveCPU,MaxDiskRead,AveDiskRead,MaxDiskWrite,
 # AveDiskWrite,MaxRSS,AveRSS,Submit,Start,End,Layout,ReqTRES,AllocTRES,ReqGRES,AllocGRES,Cluster,Partition,
 # Submit,Start,End"
-Data = np.loadtxt(original, dtype=data_type, delimiter='|', skiprows=0, usecols=(0, 1, 3, 5, 6, 7, 8, 9, 12, 13, 26, 27, 14, 16, 15)
+#Data = []
+#for i in range()
+#filetowrite =
+Data = np.loadtxt(originals[0], dtype=data_type, delimiter='|', skiprows=0, usecols=(0, 1, 3, 5, 6, 7, 8, 9, 12, 13, 26, 27, 14, 16, 15)
                   )
+
+
+for i in range(1,len(originals)):
+    Datatemp = np.loadtxt(originals[i], dtype=data_type, delimiter='|', skiprows=0, usecols=(0, 1, 3, 5, 6, 7, 8, 9, 12, 13, 26, 27, 14, 16, 15))
+    #print(len(Data),len(Datatemp))
+    #print(len(Data[0]), len(Datatemp[0]))
+    Data = np.append(Data, Datatemp)
+    #              )
+                #)
+#print(len(Data))
 #efficiencydata = np.loadtxt(original,dtype=eff_type, delimiter='|',skiprows=0,usecols=()
 #print("first value in Data is",Data[0]['End'])
+#print(len(Data[0]))
+#print("cols",len(Data[0][0]))
+#lines = sum(map(len, Data))
+#print("lines:",lines)
+flattenedData = np.array(Data).flatten().flatten()
+#print("flattened =",flattenedData,len(flattenedData))
+moreflat = flattenedData.flatten()
+#print("more flat =",moreflat,len(moreflat))
+#Data = np.reshape(flattenedData,(len(flattenedData),15))
+Data = flattenedData
 Data = Data[(Data[::]['End']).argsort()]
+Data = np.array(Data)
+#print(min(map(len, Data)))
+#print(Data.shape)
+#print(Data[0].shape)
+#np.reshape(Data, (len(Data),15))
+#print("end before:",Data[-1]['End'],len(Data))
+#print("Längen:",len(Data),Data[0],len(Data[0]),Data[0][0],len(Data[-1]))
+#print(Data[-1]['End'])
+#print(Data[-1][10])
+#print(Data[0]['End'])
+#print(Data[0][10])
+#Data = (item for item in Data if ("Unknown" not in item['End']))
+#Data = Data[ 'Unknown' in Data[:,13]]
+#TODO: Replace 14 with reference to keyword
+#Data = Data["." not in Data['JobID']]
+#print(Data)
+#print(Data[-1]['End'],len(Data))
+#print(Data)
 #print(len(Data))
 if len(Data) < 1:
     sys.stderr.write("No data in file.")
     sys.exit()
 
+startpoint = "None"
 if startpoint == "None":
     x = Data[0][10]
     x = (str(x)[2::])
