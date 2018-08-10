@@ -31,7 +31,6 @@ def translate_date_to_sec(ymdhms):
     :param ymdhms: the year-month-day-hour-minute-second data (datetime.datetime) to be translated into unix-seconds.
     :return: the amount of seconds passed since the first of january 1970 00:00 UTC, if invalid: "-1".
     """
-    #print(ymdhms)
     x_ = str(ymdhms, 'utf-8')
     if x_ == 'Unknown':
         return -1
@@ -135,7 +134,7 @@ if len(startpoint) == 10: #appends hours, minutes and seconds if only date given
 startpoint = (str(startpoint)[::])
 if oparameters.ProjectName is not None:  #if no name is given, sets the filter to ""
     filter = oparameters.ProjectName
-    print(filter)
+    #print(filter)
 else:
     filter = ""
 
@@ -146,9 +145,8 @@ else:
 
 if yearly_quota :
     partial_quota = int(yearly_quota / 12)
-    #print(partial_quota)# Script runs under the assumption, the inserted quota = 12* the instance-quota
+    # Script runs under the assumption, the inserted quota = 12* the instance-quota
 originals = eparameters[0]
-#print(parameter.Source)
 # this type is used to seperate allocatedcpus, starttime, endtime and other currently unused sets of data from the rest
 data_type = np.dtype(
     [('JobID', '|S256'),('Account', '|S256'), ('ReqCPUS', 'i4'), ('ReqNodes', 'i4'), ('AllocNodes', 'i4'),
@@ -162,58 +160,51 @@ data_type = np.dtype(
 # State,CPUTimeRAW,ElapsedRaw,TotalCPU,SystemCPU,UserCPU,MinCPU,AveCPU,MaxDiskRead,AveDiskRead,MaxDiskWrite,
 # AveDiskWrite,MaxRSS,AveRSS,Submit,Start,End,Layout,ReqTRES,AllocTRES,ReqGRES,AllocGRES,Cluster,Partition,
 # Submit,Start,End"
-#Data = []
-#for i in range()
-#filetowrite =
+
 Data = np.loadtxt(originals[0], dtype=data_type, delimiter='|', skiprows=0, usecols=(0, 1, 3, 5, 6, 7, 8, 9, 12, 13, 26, 27, 14, 16, 15)
                   )
+Datatemp2 = []
+counter = 0
+
+#print("len pre (1)",len(Data))
+for j in Data:
+    #print(len(Data))
+    if 'Unknown' not in str(j['End']) and '.' not in str(j['JobID']) and filter in str(j['Account']):
+        Datatemp2.append(j)
+
+Data =Datatemp2
+#print("len post (1)",len(Data))
 
 
-for i in range(1,len(originals)):
+for i in range(0,len(originals)):
     Datatemp = np.loadtxt(originals[i], dtype=data_type, delimiter='|', skiprows=0, usecols=(0, 1, 3, 5, 6, 7, 8, 9, 12, 13, 26, 27, 14, 16, 15))
-    #print(len(Data),len(Datatemp))
-    #print(len(Data[0]), len(Datatemp[0]))
-    Data = np.append(Data, Datatemp)
-    #              )
-                #)
-#print(len(Data))
-#efficiencydata = np.loadtxt(original,dtype=eff_type, delimiter='|',skiprows=0,usecols=()
-#print("first value in Data is",Data[0]['End'])
-#print(len(Data[0]))
-#print("cols",len(Data[0][0]))
-#lines = sum(map(len, Data))
-#print("lines:",lines)
+    Datatemp2 =[]
+    #print("len pre",len(Datatemp))
+    for j in Datatemp:
+        if 'Unknown' not in str(j['End']) and '.' not in str(j['JobID']) and filter in str(j['Account']):
+            Datatemp2.append(j)
+    #print("len post",len(Datatemp2))
+
+
+
+
+    if Datatemp2:
+        if Data:
+            Data = np.append(Data, Datatemp2)
+        else:
+            Data = Datatemp2
+Datatemp2 = []
+print("total Datapoints:",len(Data))
 flattenedData = np.array(Data).flatten().flatten()
-#print("flattened =",flattenedData,len(flattenedData))
-moreflat = flattenedData.flatten()
-#print("more flat =",moreflat,len(moreflat))
-#Data = np.reshape(flattenedData,(len(flattenedData),15))
 Data = flattenedData
 Data = Data[(Data[::]['End']).argsort()]
 Data = np.array(Data)
-#print(min(map(len, Data)))
-#print(Data.shape)
-#print(Data[0].shape)
-#np.reshape(Data, (len(Data),15))
-#print("end before:",Data[-1]['End'],len(Data))
-#print("Längen:",len(Data),Data[0],len(Data[0]),Data[0][0],len(Data[-1]))
-#print(Data[-1]['End'])
-#print(Data[-1][10])
-#print(Data[0]['End'])
-#print(Data[0][10])
-#Data = (item for item in Data if ("Unknown" not in item['End']))
-#Data = Data[ 'Unknown' in Data[:,13]]
-#TODO: Replace 14 with reference to keyword
-#Data = Data["." not in Data['JobID']]
-#print(Data)
 #print(Data[-1]['End'],len(Data))
-#print(Data)
-#print(len(Data))
 if len(Data) < 1:
     sys.stderr.write("No data in file.")
     sys.exit()
 
-startpoint = "None"
+#startpoint = "None"
 if startpoint == "None":
     x = Data[0][10]
     x = (str(x)[2::])
@@ -225,6 +216,7 @@ if startpoint == "None":
 highestdata = max(Data[::]['End'])
 highestdata = str(highestdata)
 highestdata = highestdata[2:-1]
+#print(highestdata,startpoint)
 if highestdata < startpoint:
     sys.stderr.write('The startpoint is after the latest date in the file')
     sys.exit()
@@ -244,9 +236,7 @@ x = 0  # iterator variable, counts how many usable points of data exist
 Systemt = []
 Usert = []
 for row in Data:
-    #print(row['JobID'][2::])
     if translate_date_to_sec(row['End']) > 0 and ("." not in str(row['JobID'])) and filter in str(row['Account']):  # this filters jobs that haven't ended, due to them returning "-1".
-        #print(row['JobID'])
         end_t = datetime.datetime.strptime(str(row['End'], 'utf-8'), "%Y-%m-%d-%H-%M-%S")  # converts the string into a
         # datetime construct to interpret the endtime
         start_t = datetime.datetime.strptime(str(row['Start'], 'utf-8'), "%Y-%m-%d-%H-%M-%S")  # converts the string
@@ -261,9 +251,6 @@ for row in Data:
         y_start1 = min(y_start1, row['AllocCPUS'] * row["ElapsedRaw"]/3600)  # calculate the lowest -> hours
         y_end1 = max(y_end1, row['AllocCPUS'] * row["ElapsedRaw"] / 3600)  # calculate the highest -> hours
         plot_array[x, 0] = end_t.timestamp()  # writes the time of end into the array
-        #print("start",start_t)
-        #print("end",end_t)
-        #print("hours:",row["ElapsedRaw"]/ 3600, "cpus:",row['AllocCPUS'])
         plot_array[x, 1] = row['AllocCPUS'] * row["ElapsedRaw"] / 3600  # writes duration as  cores * hours
         formated = row['SystemCPU']
         formated = str(formated)[2:]
@@ -286,7 +273,6 @@ if len(Usert) < 1:
 # creates a cutoff after the array runs out of values (several data points were skipped, results in 0s) and sorts it.
 plot_array = plot_array[0:x][:]
 plot_array = plot_array[plot_array[:, 0].argsort()]
-    #np.sort(plot_array, axis=0)
 
 # The third column is defined by the previous row's third column, as it is the cumulative runtime, the first row has
 # no previous row , initialising the first row's with purely the second col.
@@ -334,14 +320,10 @@ if yearly_quota:
 tmp_x3 = []
 # transforms x2 into a format visualizable via the plotter alongside the main plot
 for x2 in range(0, np.size(tmp_x2)-1):
-    #print(len(tmp_x2),len(tmp_x3),x2)
-    #print(tmp_x2[x2])
-    #tmp_x3[x2] = (datetime.datetime.fromtimestamp(tmp_x2[x2]))
     tmp_x3.append(datetime.datetime.fromtimestamp(tmp_x2[x2]))
 tmp_x3 = tmp_x3[0:int(number_of_instances) * 3:1]
 
 
-#print(len(tmp_y2))
 
 # determines the color via colorisation and then plots three points, stops before the last interval to draw
 # sends the span of bottom left corner and top left corner, compares with span between top right and next bottom left
@@ -373,15 +355,10 @@ if yearly_quota and len(tmp_x) >= 1:
 
     extrapolationx[1] = (datetime.datetime.strptime(startpoint, "%Y-%m-%d-%H-%M-%S")).timestamp()
     extrapolationx[1] += (365+30)*24*3600
-#print("extrapolx1 = ",extrapolationx[1])
     extrapolationx[1] = datetime.datetime.fromtimestamp(extrapolationx[1])
-#print("extrapolx1 = ",extrapolationx[1])
     difference = datetime.datetime.strptime(startpoint, "%Y-%m-%d-%H-%M-%S").timestamp() - tmp_x[0].timestamp()
-#print(difference)
-#print(difference//(3600*24*30))
     difference = difference//(3600*24*30)
     extrapolationy[1] = extrapolationy[0] + partial_quota * (difference + 2)
-#print(extrapolationx,extrapolationy)
     plt .plot(extrapolationx, extrapolationy, "black")
 
 # Issue: adds an additional unwanted line along the x-axis, using max() on each x to remove this?
@@ -393,22 +370,20 @@ if startpoint :
     beginning = datetime.datetime.strptime(startpoint, "%Y-%m-%d-%H-%M-%S").timestamp()
     end = datetime.datetime.strptime(startpoint, "%Y-%m-%d-%H-%M-%S").timestamp() + 365 * 24 * 3600
     beginning = beginning - 30*24*3600
-    #print("beginning:", beginning)
     end = end + 30*24*3600
     #end = datetime.datetime.fromtimestamp(end)
-    #print("end:", end)
 #temp_timestamp1 = x_start.timestamp()
 #temp_timestamp2 = x_end.timestamp()
 
 
 # Print statements, to give feedback either onscreen or into a dedicated file to be piped into.
-print('the total usertime is ', Usert[-1], "hours")
-print('the total Systemtime is ', Systemt[-1], "hours")
-print('together they are', Usert[-1]+Systemt[-1], "hours")
-print('and the total number of corehours is', tmp_y[-1])
-efficiency = ((Usert[-1] + Systemt[-1]))/tmp_y[-1]
+#print('the total usertime is ', Usert[-1], "hours")
+#print('the total Systemtime is ', Systemt[-1], "hours")
+print('The accumulated TotalCPU time is', int((Usert[-1]+Systemt[-1])*100)/100, "hours")
+print('and the number of accumulated corehours is', int(tmp_y[-1]*100)/100)
+efficiency = (Usert[-1] + Systemt[-1])/tmp_y[-1]
 # Added rounding to the efficiency percentage feedback.
-print('The total efficiency is',int(efficiency*10000)/100+0.005, "%")
+print('Which results in an efficiency of',int(efficiency*10000)/100+0.005, "%")
 if efficiency < 0 or efficiency > 1:
     print("Efficiency is outside of it's boundaries, valid is only between 0 and 1")
 
@@ -425,15 +400,6 @@ if yearly_quota:  # ensuring that the extrapolated quota is still in frame
     axis.set_ylim([y_start2 - (0.05 * y_end2),  max(tmp_y[-1],extrapolationy[1])* 1.05])
 else:  # No quota given, image is focused around occupied and utilized resources.
     axis.set_ylim([y_start2 - (0.05 * y_end2), tmp_y[-1] * 1.05])
-#print("highest totaltime (last)",totaltime[-1])
-#print("tmp_y[-1]",tmp_y[-1])
-#print("length of totaltime",len(totaltime))
-#print("length of tmp_y",len(tmp_y))
-#print("length of tmp_x",len(tmp_x))
-#print(min(totaltime),min)
-#print(max(totaltime),max)
-#print((totaltime[len(totaltime)//2]))
-#totaltime.sort()
 
 
 red_patch = mpatches.Patch(color='#ff0000', alpha=0.7, label='>=150%')
