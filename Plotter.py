@@ -10,12 +10,10 @@ import matplotlib.patches as mpatches
 import re
 
 # This program creates an image that visualizes a given log file in relation to a given quota.
-
 # determines quota-durations, current default value: 6 hours
 # suggested 30*24*60*60 for months, but that creates imprecise months, assumes 30 day per month
-# TODO: adapt seconds_per_instance depending on timerange
+# TODO? adapt seconds_per_instance depending on timerange
 seconds_per_instance = 365.25/12 * 24 * 60 * 60
-
 thresholds = [0.7, 1.1, 1.5]  # If the usage this month is below thresholds times the quota,
 colors = ['#81c478', "#008000", '#ffa500']  # the quota will be colored in the equally indexed color.
 maximum = '#ff0000'  # if the usage is above the (highest threshold) * quota, the Quota will be colored in
@@ -39,6 +37,7 @@ def translate_date_to_sec(ymdhms):
         return temp_time.timestamp()  # then convert into unix-seconds (timestamp)
 
 
+# reads the parameters and interprets -src, -o as well as every parameter not beginning with "-"
 def essentialpar(parameters):
     if (len(parameters)) < 2:
         sys.stderr.write("This file needs both an input and an output")
@@ -68,6 +67,7 @@ def essentialpar(parameters):
     sources = sourceskey+sourcesnok
     return [sources, output, optpara]
 
+
 def translate_time_to_sec(time):
     flagdays = False
     if '-' in time:
@@ -83,6 +83,7 @@ def translate_time_to_sec(time):
     for i in range(len(timesplitseconds)):
         seconds += int(''.join(c for c in (timesplitseconds[-(i + 1)]) if c.isdigit())) * int(math.pow(60, int(i)))
     return seconds
+
 
 # separates the quotas into four categories, taking the ratios from thresholds and the results from colors
 def colorisation(value, comp):
@@ -102,19 +103,10 @@ def colorisation(value, comp):
         return maximum
 
 
-
 # Reads parameter inputs.
 ap = argparse.ArgumentParser()
-#ap.add_argument('Source', type=str, nargs="+")  # TODO: implement option of inputting multiple files
-#ap.add_argument('Source', type=argparse.Filetype('r'), nargs='+')
-
-#ap.add_argument('Output', type=str, nargs=1)
 ap.add_argument("-o",nargs=1)
 ap.add_argument("-src",nargs='*')
-#ap.add_argument('-src', dest='Source', type=argparse.Filetype('r'), nargs='+')
-
-
-
 ap.add_argument('--quota', dest='Quota', type=int, nargs=1)
 ap.add_argument('-q', dest='Quota', type=int, nargs=1)
 ap.add_argument('-s', dest='StartPoint', default="None", type=str, nargs='?')
@@ -134,7 +126,6 @@ if len(startpoint) == 10: #appends hours, minutes and seconds if only date given
 startpoint = (str(startpoint)[::])
 if oparameters.ProjectName is not None:  #if no name is given, sets the filter to ""
     filter = oparameters.ProjectName
-    #print(filter)
 else:
     filter = ""
 
@@ -176,20 +167,16 @@ Data =Datatemp2
 #print("len post (1)",len(Data))
 
 
-for i in range(0,len(originals)):
+for i in range(1,len(originals)):
     Datatemp = np.loadtxt(originals[i], dtype=data_type, delimiter='|', skiprows=0, usecols=(0, 1, 3, 5, 6, 7, 8, 9, 12, 13, 26, 27, 14, 16, 15))
     Datatemp2 =[]
     #print("len pre",len(Datatemp))
     for j in Datatemp:
         if 'Unknown' not in str(j['End']) and '.' not in str(j['JobID']) and filter in str(j['Account']):
             Datatemp2.append(j)
-    #print("len post",len(Datatemp2))
-
-
-
 
     if Datatemp2:
-        if Data:
+        if len(Data) > 0:
             Data = np.append(Data, Datatemp2)
         else:
             Data = Datatemp2
@@ -199,12 +186,11 @@ flattenedData = np.array(Data).flatten().flatten()
 Data = flattenedData
 Data = Data[(Data[::]['End']).argsort()]
 Data = np.array(Data)
-#print(Data[-1]['End'],len(Data))
+
 if len(Data) < 1:
     sys.stderr.write("No data in file.")
     sys.exit()
 
-#startpoint = "None"
 if startpoint == "None":
     x = Data[0][10]
     x = (str(x)[2::])
@@ -216,7 +202,6 @@ if startpoint == "None":
 highestdata = max(Data[::]['End'])
 highestdata = str(highestdata)
 highestdata = highestdata[2:-1]
-#print(highestdata,startpoint)
 if highestdata < startpoint:
     sys.stderr.write('The startpoint is after the latest date in the file')
     sys.exit()
@@ -293,12 +278,8 @@ tmp_array = plot_array[:, (0, 2)]
 # the quota has to be drawn for each instance, instance is duration divided by instance_length + 1
 number_of_instances = ((x_end.timestamp() - x_start.timestamp()) / seconds_per_instance) + 1
 # splits the graph into intervals and creates three values for each instance, to visualise quotas
-# ___b----c___
-# ___|________
-# ___|________
-# ___a________
-# The three points a, b and c define each "L"
-# the coordinates for each L are saved in  tmp_x2 and tmp_y2
+#
+# the coordinates for each Quota are saved in  tmp_x2 and tmp_y2
 tmp_x2 = np.arange(x_start.timestamp(), x_end.timestamp(), seconds_per_instance)
 tmp_x2 = np.repeat(tmp_x2, 3)  # triples tmp_x2 to create thrice the number of values
 tmp_x2 = np.sort(tmp_x2)  # Repeat creates "abcabcabc". However "aaabbbccc" is needed, hence sorting.
@@ -332,16 +313,11 @@ if yearly_quota:
         col = colorisation(tmp_y2[iterator * 3 + 3] - tmp_y2[iterator * 3], tmp_y2[iterator * 3 + 2] - tmp_y2[iterator * 3])
         coordsx = ([tmp_x3[iterator * 3 + 1], tmp_x3[iterator * 3 + 2]])
         coordsy= [tmp_y2[iterator * 3+1], tmp_y2[iterator * 3 + 2]]
-    #plt.plot([tmp_x3[iterator * 3], tmp_x3[iterator * 3 + 1], tmp_x3[iterator * 3 + 2]],
-    #         [tmp_y2[iterator * 3], tmp_y2[iterator * 3 + 1], tmp_y2[iterator * 3 + 2]], col)
         plt.fill_between(coordsx, 0, coordsy, color=col, alpha=0.8)
 
 # determines the last interval's color and draws it (uses the highest
 # recorded value as the end value of the ongoing timespan).
 
-#if len(tmp_x3) > 3 and len(tmp_y2) > 3 and yearly_quota:
-#    col = colorisation(np.max(tmp_y)-tmp_y2[-3], tmp_y2[-1] - tmp_y2[-3])
-#    plt.plot([tmp_x3[-3], tmp_x3[-2], tmp_x3[-1]], [tmp_y2[-3], tmp_y2[-2], np.max(tmp_y2[-1])], col)
 axis = plt.gca()  # for plotting/saving the plot as it's own image
 
 
@@ -406,8 +382,8 @@ red_patch = mpatches.Patch(color='#ff0000', alpha=0.7, label='>=150%')
 orange_patch = mpatches.Patch(color='#ffa500', alpha=0.7, label='>=110%,<150%')
 green_patch = mpatches.Patch(color='#008000', alpha=0.8, label='>=70%,<110%')
 lightg_patch = mpatches.Patch(color='#81c478', alpha=0.8, label='<70%')
-grey_patch = mpatches.Patch(color='grey', alpha=0.7, label='Occupied Ressources')
-yellow_patch = mpatches.Patch(color='#d9e72e', alpha=0.49, label='Utilized Ressources')
+grey_patch = mpatches.Patch(color='grey', alpha=0.7, label='Allocated Corehours')
+yellow_patch = mpatches.Patch(color='#d9e72e', alpha=0.49, label='Utilized Corehours')
 
 plt.plot(tmp_x, totaltime, '#d9e72e') #plotting the TotatlCPU Graph
 #              '#81c478', "#008000", '#ffa500' '#ff0000'
