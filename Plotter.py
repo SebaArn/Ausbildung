@@ -9,6 +9,7 @@ import sys
 import matplotlib.patches as mpatches
 import re
 
+# todo: consider "_" in jobid, discard data that includes it in the id
 # This program creates an image that visualizes a given log file in relation to a given quota.
 # determines quota-durations, current default value: 6 hours
 # suggested 30*24*60*60 for months, but that creates imprecise months, assumes 30 day per month
@@ -313,48 +314,38 @@ if yearly_quota:
         col = colorisation(tmp_y2[iterator * 3 + 3] - tmp_y2[iterator * 3], tmp_y2[iterator * 3 + 2] - tmp_y2[iterator * 3])
         coordsx = ([tmp_x3[iterator * 3 + 1], tmp_x3[iterator * 3 + 2]])
         coordsy= [tmp_y2[iterator * 3+1], tmp_y2[iterator * 3 + 2]]
-        plt.fill_between(coordsx, 0, coordsy, color=col, alpha=0.8)
+        plt.fill_between(coordsx, 0, coordsy, color=col, alpha=0.99)
 
 # determines the last interval's color and draws it (uses the highest
 # recorded value as the end value of the ongoing timespan).
 
 axis = plt.gca()  # for plotting/saving the plot as it's own image
 
-
+## Extrapolation
 if yearly_quota and len(tmp_x) >= 1:
     extrapolationx = []
     extrapolationy = []
     extrapolationx.append(tmp_x[-1])
-    extrapolationx.append(tmp_x[-1])
+    extrapolationx.append(datetime.datetime.fromtimestamp(tmp_x3[-1].timestamp()+seconds_per_instance))
+    extrapolationx.append(datetime.datetime.fromtimestamp(tmp_x[0].timestamp() + seconds_per_instance*12))
     extrapolationy.append(tmp_y[-1])
-    extrapolationy.append(tmp_y[-1])
-
-    extrapolationx[1] = (datetime.datetime.strptime(startpoint, "%Y-%m-%d-%H-%M-%S")).timestamp()
-    extrapolationx[1] += (365+30)*24*3600
-    extrapolationx[1] = datetime.datetime.fromtimestamp(extrapolationx[1])
-    difference = datetime.datetime.strptime(startpoint, "%Y-%m-%d-%H-%M-%S").timestamp() - tmp_x[0].timestamp()
-    difference = difference//(3600*24*30)
-    extrapolationy[1] = extrapolationy[0] + partial_quota * (difference + 2)
+    extrapolationy.append(max(tmp_y[-1], tmp_y2[-3] +partial_quota))
+    monthspassed = math.ceil((extrapolationx[1].timestamp() - tmp_x[0].timestamp())/seconds_per_instance)
+    extrapolationy.append(extrapolationy[-1]+(12-monthspassed)*partial_quota)
     plt .plot(extrapolationx, extrapolationy, "black")
 
 # Issue: adds an additional unwanted line along the x-axis, using max() on each x to remove this?
 
 # Sets the visual borders for the graphs; area of occurring values (main graph) +- 5%.
 
-beginning =  x_start.timestamp()
-if startpoint :
+beginning = x_start.timestamp()
+if startpoint:
     beginning = datetime.datetime.strptime(startpoint, "%Y-%m-%d-%H-%M-%S").timestamp()
     end = datetime.datetime.strptime(startpoint, "%Y-%m-%d-%H-%M-%S").timestamp() + 365 * 24 * 3600
     beginning = beginning - 30*24*3600
     end = end + 30*24*3600
-    #end = datetime.datetime.fromtimestamp(end)
-#temp_timestamp1 = x_start.timestamp()
-#temp_timestamp2 = x_end.timestamp()
-
 
 # Print statements, to give feedback either onscreen or into a dedicated file to be piped into.
-#print('the total usertime is ', Usert[-1], "hours")
-#print('the total Systemtime is ', Systemt[-1], "hours")
 print('The accumulated TotalCPU time is', int((Usert[-1]+Systemt[-1])*100)/100, "hours")
 print('and the number of accumulated corehours is', int(tmp_y[-1]*100)/100)
 efficiency = (Usert[-1] + Systemt[-1])/tmp_y[-1]
@@ -367,13 +358,11 @@ totaltime = np.zeros(len(tmp_x))
 for i in range(0,len(totaltime)):
     totaltime[i] = Usert[i]+Systemt[i]
 
+
 axis.set_xlim(datetime.datetime.fromtimestamp(beginning), datetime.datetime.fromtimestamp(end))
 
-#axis.set_xlim([datetime.datetime.fromtimestamp(int(temp_timestamp1 - (temp_timestamp2 - temp_timestamp1) / 20)),
-               #datetime.datetime.fromtimestamp(int(temp_timestamp2 + (temp_timestamp2 - temp_timestamp1) / 20))])
-
 if yearly_quota:  # ensuring that the extrapolated quota is still in frame
-    axis.set_ylim([y_start2 - (0.05 * y_end2),  max(tmp_y[-1],extrapolationy[1])* 1.05])
+    axis.set_ylim([y_start2 - (0.05 * y_end2),  max(tmp_y[-1], extrapolationy[-1]) * 1.05])
 else:  # No quota given, image is focused around occupied and utilized resources.
     axis.set_ylim([y_start2 - (0.05 * y_end2), tmp_y[-1] * 1.05])
 
@@ -384,17 +373,16 @@ green_patch = mpatches.Patch(color='#008000', alpha=0.8, label='>=70%,<110%')
 lightg_patch = mpatches.Patch(color='#81c478', alpha=0.8, label='<70%')
 grey_patch = mpatches.Patch(color='grey', alpha=0.7, label='Allocated Corehours')
 yellow_patch = mpatches.Patch(color='#d9e72e', alpha=0.49, label='Utilized Corehours')
+black_patch = mpatches.Patch(color='black', alpha=1, label='Extrapolation of guaranteed Corehours')
 
-plt.plot(tmp_x, totaltime, '#d9e72e') #plotting the TotatlCPU Graph
-#              '#81c478', "#008000", '#ffa500' '#ff0000'
-if yearly_quota :
-    plt.legend(handles=[red_patch, orange_patch, green_patch, lightg_patch, grey_patch, yellow_patch])
+plt.plot(tmp_x, totaltime, '#d9e72e')  # plotting the TotatlCPU Graph
+if yearly_quota:  # Legends for if there is a quota, or a shorter Legend in case there isn't.
+    plt.legend(handles=[red_patch, orange_patch, green_patch, lightg_patch, grey_patch, yellow_patch, black_patch])
 else:
     plt.legend(handles=[grey_patch, yellow_patch])
-plt.fill_between(tmp_x, 0, totaltime, color='#d9e72e', alpha=0.99) # plotting the area below TotalCPU graph
+plt.fill_between(tmp_x, 0, totaltime, color='#d9e72e', alpha=0.8) # plotting the area below TotalCPU graph
 plt.plot(tmp_x, tmp_y, 'grey', fillstyle='bottom', alpha=0.8)  # plotting the main graph (cores * hours)
 plt.fill_between(tmp_x, 0, tmp_y, color="white", alpha=0.7)  # plotting the area below the corehours graph
-#plt.plot(tmp_x,totaly)
 
 # Creates a grid in the image to aid the viewer in visually processing the data.
 plt.grid(True)
