@@ -9,23 +9,6 @@ import sys
 import matplotlib.patches as mpatches
 import re
 #
-## TODO: Create a function that allows log and pot
-
-
-def fun_log_pot(a,b, c, d, p):  # Implementation of a function, which includes logarithmic and potential aspects.
-    return a + b * p**c * log2(p, d)
-
-
-def fun_log(a, b, p, c):  # Implementation of a logarithmic function.
-    return a + b * log2(p, c)
-
-
-def fun_poly(a, b, p):  # Implementation of a polynomial function.
-    return a+b*p
-
-
-def fun_pot(a, b, p, c):  # Implementation of a potential function.
-    return a + b* p**c
 
 
 def log2(x, y):  # logarithm to the base of 2^x
@@ -33,7 +16,7 @@ def log2(x, y):  # logarithm to the base of 2^x
 
 
 def allgfunc(c, i, j, p):
-    if j == 0:
+    if j == -1:
         return c * p**i
     return c * p**i * log2(p, j)
 
@@ -110,17 +93,19 @@ mode = 0
 reading = workline.replace("model: ", "")
 x = []
 
-
-
+summand = reading.split('+')
+print(summand)
 for p in np.arange(start, (end+1), interval):
     y = 0
-    summand = reading.split('+')
-    print(summand)
+
     for d in range(len(summand)):
+        c = 0
+        i = 0
+        j = -1
         if len(summand[d].split('*')) == 1:
             c = float(summand[d])
             i = 0
-            j = 0
+            j = -1
         else:
             for z in range(len(summand[d].split('*'))):
                 if summand[d].split('*')[z] == summand[d].split('*')[z].replace('p', ""):
@@ -130,13 +115,13 @@ for p in np.arange(start, (end+1), interval):
                     j = float(summand[d].split('*')[z].split('log2^')[1].split('(p)')[0])
                     #print("j="+str(j))
                 elif "p^" in summand[d].split('*')[z]:
-                    j = float(summand[d].split('*')[z].split('p^')[1].split(')')[0])
+                    i = float(summand[d].split('*')[z].split('p^')[1].split(')')[0])
                     #print("j=" + str(j))
         #print(c,i,j,p)
         y += allgfunc(c, i, j, p)
     results.append(y)
     x.append(p)
-    print(c,i,j)
+    #print(c,i,j)
 plt.plot(x, results, color='grey', alpha=0.7)
 xval = []
 means = []
