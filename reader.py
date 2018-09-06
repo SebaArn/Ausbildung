@@ -1,24 +1,23 @@
 import numpy as np  # used to handle numbers, data structures and mathematical functions
 import matplotlib.pyplot as plt  # MATLAB-like plotting
-from matplotlib.collections import PatchCollection
-from matplotlib.patches import Rectangle
-import datetime  # Used to convert our ascii dates into unix-seconds
+#  from matplotlib.collections import PatchCollection
+#  from matplotlib.patches import Rectangle
+#  import datetime  # Used to convert our ascii dates into unix-seconds
 import argparse  # used to interpret parameters
 import math
 import sys
 import matplotlib.patches as mpatches
-import re
-#
+#  import re
 
 
-def log2(x, y):  # logarithm to the base of 2^x
-    return math.log(x, int(2**y))
+def log2(x_, y_):  # logarithm to the base of 2^x
+    return math.log(x_, int(2**y_))
 
 
-def allgfunc(c, i, j, p):
-    if j == -1:
-        return c * p**i
-    return c * p**i * log2(p, j)
+def general_function(c_, i_, j_, p_):
+    if j_ == -1:
+        return c_ * p_**i_
+    return c_ * p_**i_ * log2(p_, j_)
 
 
 parser = argparse.ArgumentParser()
@@ -30,12 +29,12 @@ parser.add_argument("-end", dest="End", default=64, type=int, nargs=1)
 parser.add_argument("-f", dest="Focus", type=float, nargs='*')
 parser.add_argument("-help", dest="Help", type=bool, nargs='*')
 parameter = parser.parse_args()
-deviationbar = False   # Determines if the deviation-bar is displayed.
+deviation_bar = False   # Determines if the deviation-bar is displayed.
 
 if not(parameter.Start and parameter.End and parameter.Name and parameter.Output):  # Invalid inputs
     sys.stderr.write("needs a source, an output file, a start and an endpoint.")
     sys.exit()
-f_exists = False
+focus_exists = False
 if parameter.Help is not None:
     s = "This Program receives a source file's name, an output path and na,e, as well as a start and an end value, \
     these parameters can be given by running the program with -name=_Name_ -o=_pathname_ start=_start_ -end=_end_"
@@ -50,7 +49,7 @@ try:
         print("focus=", parameter.Focus[0])
         if len(parameter.Focus) > 0:
             focus = parameter.Focus[0]
-            f_exists = True
+            focus_exists = True
 except:
     sys.stderr.write("error reading filename, acquiring start- and end point")
     sys.exit()
@@ -71,55 +70,56 @@ except:
     sys.exit("Error regarding "+filename+" No right to read or file doesn't exist.")
 lines = file_object.readlines()
 measures = []
+read_line = ""
+units = ""
 for i in lines:
     if "metric:" in i:
-        eval_ = i[9:-1]
+        units = i[8:]
     else:
-        eval_ = 0
+        units = 0
     if "Mean" in i:
         measures.append(i)
     if "model: " in i.lower():
-        readline = str(i).lower()
-workline = readline.strip()
-reading = workline.replace("model: ", "")
-summand = reading.split('+')
-print(summand)
+        read_line = str(i).lower()
+work_line = read_line.strip()
+reading = work_line.replace("model: ", "")
+addend = reading.split('+')
+print(addend)
 x = []
 results = []
-clist = []
-ilist = []
-jlist = []
-for d in range(len(summand)):  # reads each addend-term
-    c = 0
+c_list = []
+i_list = []
+j_list = []
+for d in range(len(addend)):  # reads each addend-term
     i = 0
     j = -1
-    if len(summand[d].split('*')) == 1:
-        c = float(summand[d])
+    if len(addend[d].split('*')) == 1:
+        c = float(addend[d])
     else:
-        for z in range(len(summand[d].split('*'))):  # reads each factor-term
-            factortermpart = summand[d].split('*')[z]
-            if factortermpart == factortermpart.replace('p', ""):
-                c = float(factortermpart)
-            elif 'log2^' in factortermpart:
-                j = float(factortermpart.split('log2^')[1].split('(p)')[0])
-            elif "p^" in factortermpart:
-                i = float(factortermpart.split('p^')[1].split(')')[0])
-    clist.append(c)
-    ilist.append(i)
-    jlist.append(j)
+        for z in range(len(addend[d].split('*'))):  # reads each factor-term
+            factor_term_part = addend[d].split('*')[z]
+            if factor_term_part == factor_term_part.replace('p', ""):
+                c = float(factor_term_part)
+            elif 'log2^' in factor_term_part:
+                j = float(factor_term_part.split('log2^')[1].split('(p)')[0])
+            elif "p^" in factor_term_part:
+                i = float(factor_term_part.split('p^')[1].split(')')[0])
+    c_list.append(c)
+    i_list.append(i)
+    j_list.append(j)
 
 for p in np.arange(start, (end+1), interval):
     y = 0
-    for d in range(len(summand)):
-        y += allgfunc(clist[d], ilist[d], jlist[d], p)
+    for d in range(len(addend)):
+        y += general_function(c_list[d], i_list[d], j_list[d], p)
     results.append(y)
     x.append(p)
 plt.plot(x, results, color='grey', alpha=0.7)
-xval = []
+x_values = []
 means = []
 
 for i in range(len(measures)):
-    xval.append(float(measures[i].split()[0]))
+    x_values.append(float(measures[i].split()[0]))
     means.append(float(measures[i].split()[2]))
 axis = plt.gca()
 axis.set_xlim(start - 0.05*end, end + 0.05*end)
@@ -128,45 +128,38 @@ plt.grid(True)
 print("given range:", left, "<->", right)
 print("used range:", start, "<->", end)
 
-
-# Labeling the Axis and creating Legend
-if eval_ > 0:
-    plt.ylabel("run"+eval_.lower()+" of computation")
+# Labeling the Axis
+if len(units) > 0:
+    plt.ylabel("run" + units.lower() + " of computation")
 else:
     plt.ylabel("run of computation")
 plt.xlabel('# of cores the program runs on')
-if eval_ > 0:
-    grey_patch = mpatches.Patch(color='grey', alpha=0.7, label='Run'+eval_.lower()+' of computation with given cores ('+ reading+")")
+# establishing legends
+if len(units) > 0:
+    grey_patch = mpatches.Patch(color='grey', alpha=0.7, label='Run' + units[0].lower() + units[1::] +
+                                                               ' of computation with given cores (' + reading + ")")
 else:
     grey_patch = mpatches.Patch(color='grey', alpha=0.7, label='Run of computation with given cores (' + reading + ')')
 
 teal_patch = mpatches.Patch(color='#00e5e5', alpha=0.97, label='Measurements (mean)')
 plt.legend(handles=[grey_patch, teal_patch])
 manager = plt.get_current_fig_manager()
-
 # f: y-axis values
 f = []
-
 # x2: X-axis values within the specified range
 x2 = []
-
 # Copying values for specified range
-if f_exists:
+if focus_exists:
     for i in np.arange(max(focus-0.05*(end-start), start), min(focus+0.050*(end-start), end)+interval, interval):
-        #print(i)
         f.append(results[int((i-start)*(1/interval))])
         x2.append(x[int((i-start)*(1/interval))])
 
-#if f_exists:
-#    i = max(focus-0.05*(end-start),)
-#    while
-
 # Drawing marker in specified range
 plt.plot(x2, f, linewidth=3, color='red', alpha=0.75)
-for i in range(len(xval)):
-    plt.plot([xval[i]], [means[i]], marker='o', markersize=2, color='#00e5e5', alpha=0.85)
-    if deviationbar:
-        plt.errorbar(xval[i], means[i], 0.05*(max(results)-results[0]), color='orange', alpha=0.9, capsize=3)
+for i in range(len(x_values)):
+    plt.plot([x_values[i]], [means[i]], marker='o', markersize=2, color='#00e5e5', alpha=0.85)
+    if deviation_bar:
+        plt.errorbar(x_values[i], means[i], 0.05 * (max(results) - results[0]), color='orange', alpha=0.9, capsize=3)
 
 plt.draw()
 fig = plt.gcf()

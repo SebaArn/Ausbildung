@@ -9,7 +9,7 @@ import sys
 import matplotlib.patches as mpatches
 import re
 
-# todo: consider "_" in jobid, discard data that includes it in the id
+# todo: consider "_" in jobid, discard data that includes it in the id_
 # This program creates an image that visualizes a given log file in relation to a given quota.
 # determines quota-durations, current default value: 6 hours
 # suggested 30*24*60*60 for months, but that creates imprecise months, assumes 30 day per month
@@ -171,7 +171,7 @@ Data =Datatemp2
 for i in range(1,len(originals)):
     Datatemp = np.loadtxt(originals[i], dtype=data_type, delimiter='|', skiprows=0, usecols=(0, 1, 3, 5, 6, 7, 8, 9, 12, 13, 26, 27, 14, 16, 15))
     Datatemp2 =[]
-    #print("len pre",len(Datatemp))
+    #print("len pre",len(Data_temp))
     for j in Datatemp:
         if 'Unknown' not in str(j['End']) and '.' not in str(j['JobID']) and filter in str(j['Account']):
             Datatemp2.append(j)
@@ -197,14 +197,14 @@ if startpoint == "None":
     x = (str(x)[2::])
     x = x[:-1:]
     startpoint = x
-    #startpoint = datetime.datetime.strptime(x, "%Y-%m-%d-%H-%M-%S")
+    #start_point = datetime.datetime.strptime(x, "%Y-%m-%d-%H-%M-%S")
 
 
 highestdata = max(Data[::]['End'])
 highestdata = str(highestdata)
 highestdata = highestdata[2:-1]
 if highestdata < startpoint:
-    sys.stderr.write('The startpoint is after the latest date in the file')
+    sys.stderr.write('The start_point is after the latest date in the file')
     sys.exit()
 datetime.datetime.strptime(startpoint, "%Y-%m-%d-%H-%M-%S")
 x = (datetime.datetime.strptime(startpoint, "%Y-%m-%d-%H-%M-%S")).timestamp()
@@ -305,8 +305,6 @@ for x2 in range(0, np.size(tmp_x2)-1):
     tmp_x3.append(datetime.datetime.fromtimestamp(tmp_x2[x2]))
 tmp_x3 = tmp_x3[0:int(number_of_instances) * 3:1]
 
-
-
 # determines the color via colorisation and then plots three points, stops before the last interval to draw
 # sends the span of bottom left corner and top left corner, compares with span between top right and next bottom left
 if yearly_quota:
@@ -321,7 +319,7 @@ if yearly_quota:
 
 axis = plt.gca()  # for plotting/saving the plot as it's own image
 
-## Extrapolation
+#  Extrapolation
 if yearly_quota and len(tmp_x) >= 1:
     extrapolationx = []
     extrapolationy = []
@@ -366,7 +364,7 @@ if yearly_quota:  # ensuring that the extrapolated quota is still in frame
 else:  # No quota given, image is focused around occupied and utilized resources.
     axis.set_ylim([y_start2 - (0.05 * y_end2), tmp_y[-1] * 1.05])
 
-
+#  Creation of patches for Labels
 red_patch = mpatches.Patch(color='#ff0000', alpha=0.7, label='>=150%')
 orange_patch = mpatches.Patch(color='#ffa500', alpha=0.7, label='>=110%,<150%')
 green_patch = mpatches.Patch(color='#008000', alpha=0.8, label='>=70%,<110%')
