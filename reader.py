@@ -37,8 +37,8 @@ if not(parameter.Start and parameter.End and parameter.Name and parameter.Output
     sys.exit()
 f_exists = False
 if parameter.Help is not None:
-    s = "This Program receives a source file's name, an output path and na,e, as well as a start and an end value, "
-    s += "these parameters can be given by running the program with -name=_Name_ -o=_pathname_ start=_start_ -end=_end_"
+    s = "This Program receives a source file's name, an output path and na,e, as well as a start and an end value, \
+    these parameters can be given by running the program with -name=_Name_ -o=_pathname_ start=_start_ -end=_end_"
     print(s)
     sys.exit()
 try:
@@ -51,9 +51,6 @@ try:
         if len(parameter.Focus) > 0:
             focus = parameter.Focus[0]
             f_exists = True
-    else:
-        print("no focus")
-        f_exists = False
 except:
     sys.stderr.write("error reading filename, acquiring start- and end point")
     sys.exit()
@@ -68,7 +65,6 @@ if end < start + 1:
     print("end point needs to be greater than starting point, replacing it with the next 2^N")
     end = 2**int(math.ceil(math.log(left+1, 2)))
 interval = (end - start)/800
-
 try:
     file_object = open(filename, 'r')
 except:
@@ -85,43 +81,39 @@ for i in lines:
     if "model: " in i.lower():
         readline = str(i).lower()
 workline = readline.strip()
-results = []
-c = 1
-i = 0
-j = 0
-mode = 0
 reading = workline.replace("model: ", "")
-x = []
-
 summand = reading.split('+')
 print(summand)
+x = []
+results = []
+clist = []
+ilist = []
+jlist = []
+for d in range(len(summand)):  # reads each addend-term
+    c = 0
+    i = 0
+    j = -1
+    if len(summand[d].split('*')) == 1:
+        c = float(summand[d])
+    else:
+        for z in range(len(summand[d].split('*'))):  # reads each factor-term
+            factortermpart = summand[d].split('*')[z]
+            if factortermpart == factortermpart.replace('p', ""):
+                c = float(factortermpart)
+            elif 'log2^' in factortermpart:
+                j = float(factortermpart.split('log2^')[1].split('(p)')[0])
+            elif "p^" in factortermpart:
+                i = float(factortermpart.split('p^')[1].split(')')[0])
+    clist.append(c)
+    ilist.append(i)
+    jlist.append(j)
+
 for p in np.arange(start, (end+1), interval):
     y = 0
-
     for d in range(len(summand)):
-        c = 0
-        i = 0
-        j = -1
-        if len(summand[d].split('*')) == 1:
-            c = float(summand[d])
-            i = 0
-            j = -1
-        else:
-            for z in range(len(summand[d].split('*'))):
-                if summand[d].split('*')[z] == summand[d].split('*')[z].replace('p', ""):
-                    c = float(summand[d].split('*')[z])
-                    #print("c="+str(c))
-                elif 'log2^' in summand[d].split('*')[z]:
-                    j = float(summand[d].split('*')[z].split('log2^')[1].split('(p)')[0])
-                    #print("j="+str(j))
-                elif "p^" in summand[d].split('*')[z]:
-                    i = float(summand[d].split('*')[z].split('p^')[1].split(')')[0])
-                    #print("j=" + str(j))
-        #print(c,i,j,p)
-        y += allgfunc(c, i, j, p)
+        y += allgfunc(clist[d], ilist[d], jlist[d], p)
     results.append(y)
     x.append(p)
-    #print(c,i,j)
 plt.plot(x, results, color='grey', alpha=0.7)
 xval = []
 means = []
