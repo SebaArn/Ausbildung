@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use('Agg')
 import numpy as np  # used to handle numbers, data structures and mathematical functions
 import matplotlib.pyplot as plt  # MATLAB-like plotting
 #  from matplotlib.collections import PatchCollection
@@ -74,10 +76,8 @@ measures = []
 read_line = ""
 units = ""
 for i in lines:
-    if "metric:" in i:
+    if "metric:" in i.lower():
         units = i[8:-1]
-    else:
-        units = ""
     if "Mean" in i:
         measures.append(i)
     if "model: " in i.lower():
