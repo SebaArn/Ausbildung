@@ -11,11 +11,11 @@ import matplotlib.patches as mpatches
 
 
 def log2(x_, y_):  # logarithm to the base of 2^x
-    return math.log(x_, int(2**y_))
+    return math.log(x_, 2**y_)
 
 
 def general_function(c_, i_, j_, p_):
-    if j_ == -1:
+    if j_ == 0:
         return c_ * p_**i_
     return c_ * p_**i_ * log2(p_, j_)
 
@@ -50,7 +50,7 @@ try:
         if len(parameter.Focus) > 0:
             focus = parameter.Focus[0]
             focus_exists = True
-except:
+except Exception:
     sys.stderr.write("error reading filename, acquiring start- and end point")
     sys.exit()
 if left < 1:
@@ -66,7 +66,7 @@ if end < start + 1:
 interval = (end - start)/800
 try:
     file_object = open(filename, 'r')
-except:
+except Exception:
     sys.exit("Error regarding "+filename+" No right to read or file doesn't exist.")
 lines = file_object.readlines()
 measures = []
@@ -74,7 +74,7 @@ read_line = ""
 units = ""
 for i in lines:
     if "metric:" in i:
-        units = i[8:]
+        units = i[8:-1]
     else:
         units = 0
     if "Mean" in i:
@@ -92,7 +92,7 @@ i_list = []
 j_list = []
 for d in range(len(addend)):  # reads each addend-term
     i = 0
-    j = -1
+    j = 0
     if len(addend[d].split('*')) == 1:
         c = float(addend[d])
     else:
@@ -127,7 +127,6 @@ axis.set_ylim(0, max(results)*1.05)
 plt.grid(True)
 print("given range:", left, "<->", right)
 print("used range:", start, "<->", end)
-
 # Labeling the Axis
 if len(units) > 0:
     plt.ylabel("run" + units.lower() + " of computation")
@@ -140,7 +139,6 @@ if len(units) > 0:
                                                                ' of computation with given cores (' + reading + ")")
 else:
     grey_patch = mpatches.Patch(color='grey', alpha=0.7, label='Run of computation with given cores (' + reading + ')')
-
 teal_patch = mpatches.Patch(color='#00e5e5', alpha=0.97, label='Measurements (mean)')
 plt.legend(handles=[grey_patch, teal_patch])
 manager = plt.get_current_fig_manager()

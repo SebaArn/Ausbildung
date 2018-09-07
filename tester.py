@@ -31,12 +31,13 @@ Models.append(["0+8*log2^5(p)", "metric: np"])
 Models.append(["10+1*p", "metric: efficiency"])
 Models.append(["10+-1*log2^3(p)", "metric: effizienz"])
 Models.append(["15", "metric: zeit"])
-Models.append(["0+5*p", "metric: Verhalten"])
+Models.append(["10+1*log2^-1(p)", "metric: Verhalten"])
 Models.append(["0+8*log2^5(p)", "metric: time"])
 Models.append(["0+1*(p^2)+1*log2^1(p)", "metric: time"])
 Models.append(["10+-1*log2^3(p)", "metric: time"])
 Models.append(["0.5+-1*log2^3(p)+0.25*(p^4)", "metric: nuR"])
 Models.append(["1+2+3", "metric: metric"])
+Models.append(["-1+-1*(p^-1)+-1*log2^-3(p)", "metric: Vergnügen"])
 
 file_number = len(Models)
 for i in range(file_number):
@@ -89,12 +90,12 @@ for i in range(file_number - 1, -1, -1):
     try:
         m = 0
         #  os.remove(remove_sources[i])
-    except:
+    except Exception:
         print()
     try:
         m = 0
         #  os.remove(remove_outputs[i])
-    except:
+    except Exception:
         print()
 
 
