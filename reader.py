@@ -9,6 +9,7 @@ import sys
 import matplotlib.patches as mpatches
 #  import re
 
+
 #  allow negative potencies? Will there be negative logarithms?
 def log2(x_, y_):  # logarithm to the base of 2^x
     return math.log(x_, 2**y_)
@@ -76,7 +77,7 @@ for i in lines:
     if "metric:" in i:
         units = i[8:-1]
     else:
-        units = 0
+        units = ""
     if "Mean" in i:
         measures.append(i)
     if "model: " in i.lower():
