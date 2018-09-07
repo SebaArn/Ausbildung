@@ -9,7 +9,7 @@ import sys
 import matplotlib.patches as mpatches
 #  import re
 
-
+#  allow negative potencies? Will there be negative logarithms?
 def log2(x_, y_):  # logarithm to the base of 2^x
     return math.log(x_, 2**y_)
 
