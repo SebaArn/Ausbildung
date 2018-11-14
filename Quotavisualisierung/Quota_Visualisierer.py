@@ -1,4 +1,6 @@
 import numpy as np  # used to handle numbers, data structures and mathematical functions
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt  # MATLAB-like plotting
 #  from matplotlib.collections import PatchCollection
 #  from matplotlib.patches import Rectangle
