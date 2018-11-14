@@ -1,0 +1,567 @@
+Dbg: Processing line >4|minijobs|uk052927|1|10000Mn|1|1|32|1|32||COMPLETED|608|19|00:04.253|00:03.537|00:00.715|||||||||2017-12-01T13:34:23|2017-12-01T13:34:24||cpu=1,mem=10000M,node=1|cpu=32,mem=10000M,node=1|||cltest|public<
+Found 34 tokens in string
+Current Element:JobID 4
+Current Element:Account minijobs
+Current Element:User uk052927
+Current Element:ReqCPUs 1
+Current Element:ReqMEM 10000Mn
+Current Element:ReqNodes 1
+Current Element:AllocNodes 1
+Current Element:AllocCPUS 32
+Current Element:NNodes 1
+Current Element:NCPUs 32
+Current Element:NTasks 
+Current Element:State COMPLETED
+Current Element:CPUTimeRAW 608
+Current Element:ElapsedRAW 19
+Current Element:TotalCPU 00:04.253
+Current Element:SystemCPU 00:03.537
+Current Element:UserCPU 00:00.715
+Current Element:MinCPU 
+Current Element:AveCPU 
+Current Element:MaxDiskRead 
+Current Element:AveDiskRead 
+Current Element:MaxDiskWrite 
+Current Element:AveDiskWrite 
+Current Element:MaxRSS 
+Current Element:AveRSS 
+Current Element:Submit 2017-12-01T13:34:23
+Current Element:Start 2017-12-01T13:34:24
+Current Element:End 
+Discarding >cpu=1,mem=10000M,node=1|cpu=32,mem=10000M,node=1|||cltest|public<
+Dbg: Processing line >4.batch|minijobs||32|10000Mn|1|1|32|1|32|1|COMPLETED|608|19|00:04.253|00:03.537|00:00.715|00:00:00|00:00:00|0|0|0|0|0|0|2017-12-01T13:34:24|2017-12-01T13:34:24|Unknown||cpu=32,mem=10000M,node=1|||cltest|<
+Found 34 tokens in string
+Current Element:JobID 4.batch
+Current Element:Account minijobs
+Current Element:User 
+Current Element:ReqCPUs 32
+Current Element:ReqMEM 10000Mn
+Current Element:ReqNodes 1
+Current Element:AllocNodes 1
+Current Element:AllocCPUS 32
+Current Element:NNodes 1
+Current Element:NCPUs 32
+Current Element:NTasks 1
+Current Element:State COMPLETED
+Current Element:CPUTimeRAW 608
+Current Element:ElapsedRAW 19
+Current Element:TotalCPU 00:04.253
+Current Element:SystemCPU 00:03.537
+Current Element:UserCPU 00:00.715
+Current Element:MinCPU 00:00:00
+Current Element:AveCPU 00:00:00
+Current Element:MaxDiskRead 0
+Current Element:AveDiskRead 0
+Current Element:MaxDiskWrite 0
+Current Element:AveDiskWrite 0
+Current Element:MaxRSS 0
+Current Element:AveRSS 0
+Current Element:Submit 2017-12-01T13:34:24
+Current Element:Start 2017-12-01T13:34:24
+Current Element:End Unknown
+Found "Unknown" for timestamp 
+Discarding >|cpu=32,mem=10000M,node=1|||cltest|<
+Dbg: Processing line >5|minijobs|uk052927|1|10000Mn|1|1|32|1|32||COMPLETED|640|20|00:04.233|00:03.519|00:00.713|||||||||2017-12-01T15:21:18|2017-12-01T15:21:18||cpu=1,mem=10000M,node=1|cpu=32,mem=10000M,node=1|||cltest|public<
+Found 34 tokens in string
+Current Element:JobID 5
+Current Element:Account minijobs
+Current Element:User uk052927
+Current Element:ReqCPUs 1
+Current Element:ReqMEM 10000Mn
+Current Element:ReqNodes 1
+Current Element:AllocNodes 1
+Current Element:AllocCPUS 32
+Current Element:NNodes 1
+Current Element:NCPUs 32
+Current Element:NTasks 
+Current Element:State COMPLETED
+Current Element:CPUTimeRAW 640
+Current Element:ElapsedRAW 20
+Current Element:TotalCPU 00:04.233
+Current Element:SystemCPU 00:03.519
+Current Element:UserCPU 00:00.713
+Current Element:MinCPU 
+Current Element:AveCPU 
+Current Element:MaxDiskRead 
+Current Element:AveDiskRead 
+Current Element:MaxDiskWrite 
+Current Element:AveDiskWrite 
+Current Element:MaxRSS 
+Current Element:AveRSS 
+Current Element:Submit 2017-12-01T15:21:18
+Current Element:Start 2017-12-01T15:21:18
+Current Element:End 
+Discarding >cpu=1,mem=10000M,node=1|cpu=32,mem=10000M,node=1|||cltest|public<
+Dbg: Processing line >5.batch|minijobs||32|10000Mn|1|1|32|1|32|1|COMPLETED|640|20|00:04.233|00:03.519|00:00.713|00:00:00|00:00:00|0|0|0|0|0|0|2017-12-01T15:21:18|2017-12-01T15:21:18|Unknown||cpu=32,mem=10000M,node=1|||cltest|<
+Found 34 tokens in string
+Current Element:JobID 5.batch
+Current Element:Account minijobs
+Current Element:User 
+Current Element:ReqCPUs 32
+Current Element:ReqMEM 10000Mn
+Current Element:ReqNodes 1
+Current Element:AllocNodes 1
+Current Element:AllocCPUS 32
+Current Element:NNodes 1
+Current Element:NCPUs 32
+Current Element:NTasks 1
+Current Element:State COMPLETED
+Current Element:CPUTimeRAW 640
+Current Element:ElapsedRAW 20
+Current Element:TotalCPU 00:04.233
+Current Element:SystemCPU 00:03.519
+Current Element:UserCPU 00:00.713
+Current Element:MinCPU 00:00:00
+Current Element:AveCPU 00:00:00
+Current Element:MaxDiskRead 0
+Current Element:AveDiskRead 0
+Current Element:MaxDiskWrite 0
+Current Element:AveDiskWrite 0
+Current Element:MaxRSS 0
+Current Element:AveRSS 0
+Current Element:Submit 2017-12-01T15:21:18
+Current Element:Start 2017-12-01T15:21:18
+Current Element:End Unknown
+Found "Unknown" for timestamp 
+Discarding >|cpu=32,mem=10000M,node=1|||cltest|<
+Dbg: Processing line >6|minijobs|uk052927|4|100Mc|2|2|4|2|4||NODE_FAIL|40|10|00:00:00|||||||||||2017-12-06T16:14:47|2017-12-06T16:49:16||cpu=4,mem=400M,node=2|cpu=4,mem=400M,node=2|||cltest|public<
+Found 34 tokens in string
+Current Element:JobID 6
+Current Element:Account minijobs
+Current Element:User uk052927
+Current Element:ReqCPUs 4
+Current Element:ReqMEM 100Mc
+Current Element:ReqNodes 2
+Current Element:AllocNodes 2
+Current Element:AllocCPUS 4
+Current Element:NNodes 2
+Current Element:NCPUs 4
+Current Element:NTasks 
+Current Element:State NODE_FAIL
+Current Element:CPUTimeRAW 40
+Current Element:ElapsedRAW 10
+Current Element:TotalCPU 00:00:00
+Current Element:SystemCPU 
+Current Element:UserCPU 
+Current Element:MinCPU 
+Current Element:AveCPU 
+Current Element:MaxDiskRead 
+Current Element:AveDiskRead 
+Current Element:MaxDiskWrite 
+Current Element:AveDiskWrite 
+Current Element:MaxRSS 
+Current Element:AveRSS 
+Current Element:Submit 2017-12-06T16:14:47
+Current Element:Start 2017-12-06T16:49:16
+Current Element:End 
+Discarding >cpu=4,mem=400M,node=2|cpu=4,mem=400M,node=2|||cltest|public<
+Dbg: Processing line >8|minijobs|uk052927|1|10000Mn|1|1|32|1|32||COMPLETED|608|19|00:03.924|00:03.227|00:00.697|||||||||2017-12-07T14:06:10|2017-12-07T14:09:09||cpu=1,mem=10000M,node=1|cpu=32,mem=10000M,node=1|||cltest|public<
+Found 34 tokens in string
+Current Element:JobID 8
+Current Element:Account minijobs
+Current Element:User uk052927
+Current Element:ReqCPUs 1
+Current Element:ReqMEM 10000Mn
+Current Element:ReqNodes 1
+Current Element:AllocNodes 1
+Current Element:AllocCPUS 32
+Current Element:NNodes 1
+Current Element:NCPUs 32
+Current Element:NTasks 
+Current Element:State COMPLETED
+Current Element:CPUTimeRAW 608
+Current Element:ElapsedRAW 19
+Current Element:TotalCPU 00:03.924
+Current Element:SystemCPU 00:03.227
+Current Element:UserCPU 00:00.697
+Current Element:MinCPU 
+Current Element:AveCPU 
+Current Element:MaxDiskRead 
+Current Element:AveDiskRead 
+Current Element:MaxDiskWrite 
+Current Element:AveDiskWrite 
+Current Element:MaxRSS 
+Current Element:AveRSS 
+Current Element:Submit 2017-12-07T14:06:10
+Current Element:Start 2017-12-07T14:09:09
+Current Element:End 
+Discarding >cpu=1,mem=10000M,node=1|cpu=32,mem=10000M,node=1|||cltest|public<
+Dbg: Processing line >8.batch|minijobs||32|10000Mn|1|1|32|1|32|1|COMPLETED|608|19|00:03.924|00:03.227|00:00.697|00:00:00|00:00:00|0|0|0|0|0|0|2017-12-07T14:09:09|2017-12-07T14:09:09|Unknown||cpu=32,mem=10000M,node=1|||cltest|<
+Found 34 tokens in string
+Current Element:JobID 8.batch
+Current Element:Account minijobs
+Current Element:User 
+Current Element:ReqCPUs 32
+Current Element:ReqMEM 10000Mn
+Current Element:ReqNodes 1
+Current Element:AllocNodes 1
+Current Element:AllocCPUS 32
+Current Element:NNodes 1
+Current Element:NCPUs 32
+Current Element:NTasks 1
+Current Element:State COMPLETED
+Current Element:CPUTimeRAW 608
+Current Element:ElapsedRAW 19
+Current Element:TotalCPU 00:03.924
+Current Element:SystemCPU 00:03.227
+Current Element:UserCPU 00:00.697
+Current Element:MinCPU 00:00:00
+Current Element:AveCPU 00:00:00
+Current Element:MaxDiskRead 0
+Current Element:AveDiskRead 0
+Current Element:MaxDiskWrite 0
+Current Element:AveDiskWrite 0
+Current Element:MaxRSS 0
+Current Element:AveRSS 0
+Current Element:Submit 2017-12-07T14:09:09
+Current Element:Start 2017-12-07T14:09:09
+Current Element:End Unknown
+Found "Unknown" for timestamp 
+Discarding >|cpu=32,mem=10000M,node=1|||cltest|<
+Dbg: Processing line >9|minijobs|uk052927|1|10000Mn|1|1|32|1|32||COMPLETED|640|20|00:04.161|00:03.467|00:00.693|||||||||2017-12-07T14:06:11|2017-12-07T14:09:09||cpu=1,mem=10000M,node=1|cpu=32,mem=10000M,node=1|||cltest|public<
+Found 34 tokens in string
+Current Element:JobID 9
+Current Element:Account minijobs
+Current Element:User uk052927
+Current Element:ReqCPUs 1
+Current Element:ReqMEM 10000Mn
+Current Element:ReqNodes 1
+Current Element:AllocNodes 1
+Current Element:AllocCPUS 32
+Current Element:NNodes 1
+Current Element:NCPUs 32
+Current Element:NTasks 
+Current Element:State COMPLETED
+Current Element:CPUTimeRAW 640
+Current Element:ElapsedRAW 20
+Current Element:TotalCPU 00:04.161
+Current Element:SystemCPU 00:03.467
+Current Element:UserCPU 00:00.693
+Current Element:MinCPU 
+Current Element:AveCPU 
+Current Element:MaxDiskRead 
+Current Element:AveDiskRead 
+Current Element:MaxDiskWrite 
+Current Element:AveDiskWrite 
+Current Element:MaxRSS 
+Current Element:AveRSS 
+Current Element:Submit 2017-12-07T14:06:11
+Current Element:Start 2017-12-07T14:09:09
+Current Element:End 
+Discarding >cpu=1,mem=10000M,node=1|cpu=32,mem=10000M,node=1|||cltest|public<
+Dbg: Processing line >9.batch|minijobs||32|10000Mn|1|1|32|1|32|1|COMPLETED|640|20|00:04.161|00:03.467|00:00.693|00:00:00|00:00:00|0|0|0|0|0|0|2017-12-07T14:09:09|2017-12-07T14:09:09|Unknown||cpu=32,mem=10000M,node=1|||cltest|<
+Found 34 tokens in string
+Current Element:JobID 9.batch
+Current Element:Account minijobs
+Current Element:User 
+Current Element:ReqCPUs 32
+Current Element:ReqMEM 10000Mn
+Current Element:ReqNodes 1
+Current Element:AllocNodes 1
+Current Element:AllocCPUS 32
+Current Element:NNodes 1
+Current Element:NCPUs 32
+Current Element:NTasks 1
+Current Element:State COMPLETED
+Current Element:CPUTimeRAW 640
+Current Element:ElapsedRAW 20
+Current Element:TotalCPU 00:04.161
+Current Element:SystemCPU 00:03.467
+Current Element:UserCPU 00:00.693
+Current Element:MinCPU 00:00:00
+Current Element:AveCPU 00:00:00
+Current Element:MaxDiskRead 0
+Current Element:AveDiskRead 0
+Current Element:MaxDiskWrite 0
+Current Element:AveDiskWrite 0
+Current Element:MaxRSS 0
+Current Element:AveRSS 0
+Current Element:Submit 2017-12-07T14:09:09
+Current Element:Start 2017-12-07T14:09:09
+Current Element:End Unknown
+Found "Unknown" for timestamp 
+Discarding >|cpu=32,mem=10000M,node=1|||cltest|<
+Dbg: Processing line >11|minijobs|uk052927|1|10000Mn|1|1|1|1|1||COMPLETED|0|0|00:00.015|00:00.012|00:00.002|||||||||2017-12-07T14:09:10|2017-12-07T14:09:28||cpu=1,mem=10000M,node=1|cpu=1,mem=10000M,node=1|||cltest|public<
+Found 34 tokens in string
+Current Element:JobID 11
+Current Element:Account minijobs
+Current Element:User uk052927
+Current Element:ReqCPUs 1
+Current Element:ReqMEM 10000Mn
+Current Element:ReqNodes 1
+Current Element:AllocNodes 1
+Current Element:AllocCPUS 1
+Current Element:NNodes 1
+Current Element:NCPUs 1
+Current Element:NTasks 
+Current Element:State COMPLETED
+Current Element:CPUTimeRAW 0
+Current Element:ElapsedRAW 0
+Current Element:TotalCPU 00:00.015
+Current Element:SystemCPU 00:00.012
+Current Element:UserCPU 00:00.002
+Current Element:MinCPU 
+Current Element:AveCPU 
+Current Element:MaxDiskRead 
+Current Element:AveDiskRead 
+Current Element:MaxDiskWrite 
+Current Element:AveDiskWrite 
+Current Element:MaxRSS 
+Current Element:AveRSS 
+Current Element:Submit 2017-12-07T14:09:10
+Current Element:Start 2017-12-07T14:09:28
+Current Element:End 
+Discarding >cpu=1,mem=10000M,node=1|cpu=1,mem=10000M,node=1|||cltest|public<
+Dbg: Processing line >11.batch|minijobs||1|10000Mn|1|1|1|1|1|1|COMPLETED|0|0|00:00.015|00:00.012|00:00.002|00:00:00|00:00:00|0|0|0|0|0|0|2017-12-07T14:09:28|2017-12-07T14:09:28|Unknown||cpu=1,mem=10000M,node=1|||cltest|<
+Found 34 tokens in string
+Current Element:JobID 11.batch
+Current Element:Account minijobs
+Current Element:User 
+Current Element:ReqCPUs 1
+Current Element:ReqMEM 10000Mn
+Current Element:ReqNodes 1
+Current Element:AllocNodes 1
+Current Element:AllocCPUS 1
+Current Element:NNodes 1
+Current Element:NCPUs 1
+Current Element:NTasks 1
+Current Element:State COMPLETED
+Current Element:CPUTimeRAW 0
+Current Element:ElapsedRAW 0
+Current Element:TotalCPU 00:00.015
+Current Element:SystemCPU 00:00.012
+Current Element:UserCPU 00:00.002
+Current Element:MinCPU 00:00:00
+Current Element:AveCPU 00:00:00
+Current Element:MaxDiskRead 0
+Current Element:AveDiskRead 0
+Current Element:MaxDiskWrite 0
+Current Element:AveDiskWrite 0
+Current Element:MaxRSS 0
+Current Element:AveRSS 0
+Current Element:Submit 2017-12-07T14:09:28
+Current Element:Start 2017-12-07T14:09:28
+Current Element:End Unknown
+Found "Unknown" for timestamp 
+Discarding >|cpu=1,mem=10000M,node=1|||cltest|<
+Dbg: Processing line >12|minijobs|uk052927|1|10000Mn|1|1|1|1|1||COMPLETED|19|19|00:04.150|00:03.371|00:00.779|||||||||2017-12-07T14:10:33|2017-12-07T14:10:33||cpu=1,mem=10000M,node=1|cpu=1,mem=10000M,node=1|||cltest|public<
+Found 34 tokens in string
+Current Element:JobID 12
+Current Element:Account minijobs
+Current Element:User uk052927
+Current Element:ReqCPUs 1
+Current Element:ReqMEM 10000Mn
+Current Element:ReqNodes 1
+Current Element:AllocNodes 1
+Current Element:AllocCPUS 1
+Current Element:NNodes 1
+Current Element:NCPUs 1
+Current Element:NTasks 
+Current Element:State COMPLETED
+Current Element:CPUTimeRAW 19
+Current Element:ElapsedRAW 19
+Current Element:TotalCPU 00:04.150
+Current Element:SystemCPU 00:03.371
+Current Element:UserCPU 00:00.779
+Current Element:MinCPU 
+Current Element:AveCPU 
+Current Element:MaxDiskRead 
+Current Element:AveDiskRead 
+Current Element:MaxDiskWrite 
+Current Element:AveDiskWrite 
+Current Element:MaxRSS 
+Current Element:AveRSS 
+Current Element:Submit 2017-12-07T14:10:33
+Current Element:Start 2017-12-07T14:10:33
+Current Element:End 
+Discarding >cpu=1,mem=10000M,node=1|cpu=1,mem=10000M,node=1|||cltest|public<
+Dbg: Processing line >12.batch|minijobs||1|10000Mn|1|1|1|1|1|1|COMPLETED|19|19|00:04.150|00:03.371|00:00.779|00:00:00|00:00:00|0|0|0|0|0|0|2017-12-07T14:10:33|2017-12-07T14:10:33|Unknown||cpu=1,mem=10000M,node=1|||cltest|<
+Found 34 tokens in string
+Current Element:JobID 12.batch
+Current Element:Account minijobs
+Current Element:User 
+Current Element:ReqCPUs 1
+Current Element:ReqMEM 10000Mn
+Current Element:ReqNodes 1
+Current Element:AllocNodes 1
+Current Element:AllocCPUS 1
+Current Element:NNodes 1
+Current Element:NCPUs 1
+Current Element:NTasks 1
+Current Element:State COMPLETED
+Current Element:CPUTimeRAW 19
+Current Element:ElapsedRAW 19
+Current Element:TotalCPU 00:04.150
+Current Element:SystemCPU 00:03.371
+Current Element:UserCPU 00:00.779
+Current Element:MinCPU 00:00:00
+Current Element:AveCPU 00:00:00
+Current Element:MaxDiskRead 0
+Current Element:AveDiskRead 0
+Current Element:MaxDiskWrite 0
+Current Element:AveDiskWrite 0
+Current Element:MaxRSS 0
+Current Element:AveRSS 0
+Current Element:Submit 2017-12-07T14:10:33
+Current Element:Start 2017-12-07T14:10:33
+Current Element:End Unknown
+Found "Unknown" for timestamp 
+Discarding >|cpu=1,mem=10000M,node=1|||cltest|<
+Dbg: Processing line >13|minijobs|uk052927|1|10000Mn|1|1|1|1|1||COMPLETED|19|19|00:04.040|00:03.236|00:00.803|||||||||2017-12-07T14:10:34|2017-12-07T14:10:36||cpu=1,mem=10000M,node=1|cpu=1,mem=10000M,node=1|||cltest|public<
+Found 34 tokens in string
+Current Element:JobID 13
+Current Element:Account minijobs
+Current Element:User uk052927
+Current Element:ReqCPUs 1
+Current Element:ReqMEM 10000Mn
+Current Element:ReqNodes 1
+Current Element:AllocNodes 1
+Current Element:AllocCPUS 1
+Current Element:NNodes 1
+Current Element:NCPUs 1
+Current Element:NTasks 
+Current Element:State COMPLETED
+Current Element:CPUTimeRAW 19
+Current Element:ElapsedRAW 19
+Current Element:TotalCPU 00:04.040
+Current Element:SystemCPU 00:03.236
+Current Element:UserCPU 00:00.803
+Current Element:MinCPU 
+Current Element:AveCPU 
+Current Element:MaxDiskRead 
+Current Element:AveDiskRead 
+Current Element:MaxDiskWrite 
+Current Element:AveDiskWrite 
+Current Element:MaxRSS 
+Current Element:AveRSS 
+Current Element:Submit 2017-12-07T14:10:34
+Current Element:Start 2017-12-07T14:10:36
+Current Element:End 
+Discarding >cpu=1,mem=10000M,node=1|cpu=1,mem=10000M,node=1|||cltest|public<
+Dbg: Processing line >13.batch|minijobs||1|10000Mn|1|1|1|1|1|1|COMPLETED|19|19|00:04.040|00:03.236|00:00.803|00:00:00|00:00:00|0|0|0|0|0|0|2017-12-07T14:10:36|2017-12-07T14:10:36|Unknown||cpu=1,mem=10000M,node=1|||cltest|<
+Found 34 tokens in string
+Current Element:JobID 13.batch
+Current Element:Account minijobs
+Current Element:User 
+Current Element:ReqCPUs 1
+Current Element:ReqMEM 10000Mn
+Current Element:ReqNodes 1
+Current Element:AllocNodes 1
+Current Element:AllocCPUS 1
+Current Element:NNodes 1
+Current Element:NCPUs 1
+Current Element:NTasks 1
+Current Element:State COMPLETED
+Current Element:CPUTimeRAW 19
+Current Element:ElapsedRAW 19
+Current Element:TotalCPU 00:04.040
+Current Element:SystemCPU 00:03.236
+Current Element:UserCPU 00:00.803
+Current Element:MinCPU 00:00:00
+Current Element:AveCPU 00:00:00
+Current Element:MaxDiskRead 0
+Current Element:AveDiskRead 0
+Current Element:MaxDiskWrite 0
+Current Element:AveDiskWrite 0
+Current Element:MaxRSS 0
+Current Element:AveRSS 0
+Current Element:Submit 2017-12-07T14:10:36
+Current Element:Start 2017-12-07T14:10:36
+Current Element:End Unknown
+Found "Unknown" for timestamp 
+Discarding >|cpu=1,mem=10000M,node=1|||cltest|<
+Dbg: Processing line >14|minijobs|uk052927|4|100Mc|2|2|4|2|4||COMPLETED|12|3|00:01.057|00:00.712|00:00.345|||||||||2017-12-07T14:14:32|2017-12-07T14:14:32||cpu=4,mem=400M,node=2|cpu=4,mem=400M,node=2|||cltest|public<
+Found 34 tokens in string
+Current Element:JobID 14
+Current Element:Account minijobs
+Current Element:User uk052927
+Current Element:ReqCPUs 4
+Current Element:ReqMEM 100Mc
+Current Element:ReqNodes 2
+Current Element:AllocNodes 2
+Current Element:AllocCPUS 4
+Current Element:NNodes 2
+Current Element:NCPUs 4
+Current Element:NTasks 
+Current Element:State COMPLETED
+Current Element:CPUTimeRAW 12
+Current Element:ElapsedRAW 3
+Current Element:TotalCPU 00:01.057
+Current Element:SystemCPU 00:00.712
+Current Element:UserCPU 00:00.345
+Current Element:MinCPU 
+Current Element:AveCPU 
+Current Element:MaxDiskRead 
+Current Element:AveDiskRead 
+Current Element:MaxDiskWrite 
+Current Element:AveDiskWrite 
+Current Element:MaxRSS 
+Current Element:AveRSS 
+Current Element:Submit 2017-12-07T14:14:32
+Current Element:Start 2017-12-07T14:14:32
+Current Element:End 
+Discarding >cpu=4,mem=400M,node=2|cpu=4,mem=400M,node=2|||cltest|public<
+Dbg: Processing line >14.batch|minijobs||2|100Mc|1|1|2|1|2|1|COMPLETED|6|3|00:00.620|00:00.397|00:00.223|00:00:00|00:00:00|0|0|0|0|0|0|2017-12-07T14:14:32|2017-12-07T14:14:32|Unknown||cpu=2,mem=200M,node=1|||cltest|<
+Found 34 tokens in string
+Current Element:JobID 14.batch
+Current Element:Account minijobs
+Current Element:User 
+Current Element:ReqCPUs 2
+Current Element:ReqMEM 100Mc
+Current Element:ReqNodes 1
+Current Element:AllocNodes 1
+Current Element:AllocCPUS 2
+Current Element:NNodes 1
+Current Element:NCPUs 2
+Current Element:NTasks 1
+Current Element:State COMPLETED
+Current Element:CPUTimeRAW 6
+Current Element:ElapsedRAW 3
+Current Element:TotalCPU 00:00.620
+Current Element:SystemCPU 00:00.397
+Current Element:UserCPU 00:00.223
+Current Element:MinCPU 00:00:00
+Current Element:AveCPU 00:00:00
+Current Element:MaxDiskRead 0
+Current Element:AveDiskRead 0
+Current Element:MaxDiskWrite 0
+Current Element:AveDiskWrite 0
+Current Element:MaxRSS 0
+Current Element:AveRSS 0
+Current Element:Submit 2017-12-07T14:14:32
+Current Element:Start 2017-12-07T14:14:32
+Current Element:End Unknown
+Found "Unknown" for timestamp 
+Discarding >|cpu=2,mem=200M,node=1|||cltest|<
+Dbg: Processing line >14.0|minijobs||1|100Mc|1|1|1|1|1|1|COMPLETED|2|2|00:00.436|00:00.314|00:00.121|00:00:00|00:00:00|0|0|0|0|0|0|2017-12-07T14:14:33|2017-12-07T14:14:33|Cyclic||cpu=1,mem=100M,node=1|||cltest|<
+Found 34 tokens in string
+Current Element:JobID 14.0
+Current Element:Account minijobs
+Current Element:User 
+Current Element:ReqCPUs 1
+Current Element:ReqMEM 100Mc
+Current Element:ReqNodes 1
+Current Element:AllocNodes 1
+Current Element:AllocCPUS 1
+Current Element:NNodes 1
+Current Element:NCPUs 1
+Current Element:NTasks 1
+Current Element:State COMPLETED
+Current Element:CPUTimeRAW 2
+Current Element:ElapsedRAW 2
+Current Element:TotalCPU 00:00.436
+Current Element:SystemCPU 00:00.314
+Current Element:UserCPU 00:00.121
+Current Element:MinCPU 00:00:00
+Current Element:AveCPU 00:00:00
+Current Element:MaxDiskRead 0
+Current Element:AveDiskRead 0
+Current Element:MaxDiskWrite 0
+Current Element:AveDiskWrite 0
+Current Element:MaxRSS 0
+Current Element:AveRSS 0
+Current Element:Submit 2017-12-07T14:14:33
+Current Element:Start 2017-12-07T14:14:33
+Current Element:End Cyclic
+Found "Cyclic" for timestamp 
+Discarding >|cpu=1,mem=100M,node=1|||cltest|<
