@@ -1,5 +1,7 @@
 import numpy as np  # used to handle numbers, data structures and mathematical functions
 import matplotlib
+import glob
+import os
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt  # MATLAB-like plotting
 #  from matplotlib.collections import PatchCollection
@@ -11,11 +13,9 @@ import sys
 import matplotlib.patches as mpatches
 #  import re
 
-# todo: consider "_" in jobid, discard data that includes it in the id
+# ISSUE: "_" is currently not excluded like "." is, no known occurrences, outdated?
 # This program creates an image that visualizes a given log file in relation to a given quota.
-# determines quota-durations, current default value: 6 hours
-# suggested 30*24*60*60 for months, but that creates imprecise months, assumes 30 day per month
-# TODO? adapt seconds_per_instance depending on time-range
+# Instances are currently approximations of months
 seconds_per_instance = 365.25/12 * 24 * 60 * 60
 thresholds = [0.7, 1.1, 1.5]  # If the usage this month is below thresholds times the quota,
 colors = ['#81c478', "#008000", '#ffa500']  # the quota will be colored in the equally indexed color.
@@ -23,10 +23,10 @@ maximum = '#ff0000'  # if the usage is above the (highest threshold) * quota, th
 #  the given color 'maximum'.
 plt.rcParams['figure.figsize'] = [6, 4]  # set global parameters, plotter initialisation
 
-
 # translate_date_to_sec receives a date and returns the date in unix-seconds, if it's a valid date,
 # (i.e not "Unknown" otherwise returns -1)
 # If there is more invalid inputs possible in the log-system, this has to be expanded.
+
 def translate_date_to_sec(ymdhms):
     """
     :param ymdhms: the year-month-day-hour-minute-second data (datetime.datetime) to be translated into unix-seconds.
@@ -141,6 +141,13 @@ if yearly_quota:
     partial_quota = int(yearly_quota / 12)
     # Script runs under the assumption, the inserted quota = 12* the instance-quota
 originals = e_parameters[0]
+if e_parameters[0]:
+    pass
+else:
+    sys.stderr.write("Error: no source identified, expecting source in format: 'src=path/*' or 'src path/filename'.\n")
+    sys.exit("Did not find a source file")
+if "*" in e_parameters[0][0] or "?" in e_parameters[0][0]:
+    originals = glob.glob(e_parameters[0][0])
 # Data type to store the different fields in.
 data_type = np.dtype(
     [('JobID', '|S256'), ('Account', '|S256'), ('ReqCPUS', 'i4'), ('ReqNodes', 'i4'), ('AllocNodes', 'i4'),
@@ -155,6 +162,19 @@ data_type = np.dtype(
 # AveDiskWrite,MaxRSS,AveRSS,Submit,Start,End,Layout,ReqTRES,AllocTRES,ReqGRES,AllocGRES,Cluster,Partition,
 # Submit,Start,End"
 
+
+if os.path.isfile(originals[0]):
+    print("visualizing files:")
+    for i in originals:
+        print(i)
+    pass
+else:
+    #print(originals[0])
+    sys.stderr.write("can not find sourcefile:'" + str(originals[0]) + "'\n")
+    print("________")
+    sys.exit("File not found")
+
+
 Data = np.loadtxt(originals[0], dtype=data_type, delimiter='|', skiprows=0,
                   usecols=(0, 1, 3, 5, 6, 7, 8, 9, 12, 13, 26, 27, 14, 16, 15)
                   )
@@ -166,7 +186,6 @@ for j in Data:
         Data_temp_2.append(j)
 
 Data = Data_temp_2
-
 
 for i in range(1, len(originals)):
     Data_temp = np.loadtxt(originals[i], dtype=data_type, delimiter='|', skiprows=0,
@@ -372,9 +391,9 @@ if yearly_quota:  # Legends for if there is a quota, or a shorter Legend in case
     plt.legend(handles=[red_patch, orange_patch, green_patch, light_green_patch, grey_patch, yellow_patch, black_patch])
 else:
     plt.legend(handles=[grey_patch, yellow_patch])
-plt.fill_between(tmp_x, 0, total_time, color='#d9e72e', alpha=0.8)  # plotting the area below TotalCPU graph
-plt.plot(tmp_x, tmp_y, 'grey', fillstyle='bottom', alpha=0.8)  # plotting the main graph (cores * hours)
-plt.fill_between(tmp_x, 0, tmp_y, color="white", alpha=0.7)  # plotting the area below the corehours graph
+plt.fill_between(tmp_x, 0, total_time, color='#d9e72e', alpha=0.45)  # plotting the area below TotalCPU graph
+plt.plot(tmp_x, tmp_y, 'grey', fillstyle='bottom', alpha=0.35)  # plotting the main graph (cores * hours)
+plt.fill_between(tmp_x, 0, tmp_y, color="white", alpha=0.25)  # plotting the area below the corehours graph
 
 # Creates a grid in the image to aid the viewer in visually processing the data.
 plt.grid(True)
