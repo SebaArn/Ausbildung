@@ -1,0 +1,1 @@
+git clone git@hkhlr.hrz.tu-darmstadt.de:/srv/redmine-new/data/gitrepo/monitoring/
