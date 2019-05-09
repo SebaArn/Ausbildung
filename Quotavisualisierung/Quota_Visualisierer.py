@@ -126,8 +126,9 @@ e_parameters = essential_par((sys.argv[1:]))
 # parse parameters into values, divide the Quota into months from the yearly quota.
 # convert input-parameters into data to interpret
 target_file = e_parameters[1][0]
-
-Parameternummer = o_parameters.Number_id[0]
+Parameternummer = 0
+if o_parameters.Number_id:
+    Parameternummer = o_parameters.Number_id[0]
 if Parameternummer:   #tries obtaining quota and startdate from projectdatabase
     user = getpass.getuser()
     password = getpass.getpass()
