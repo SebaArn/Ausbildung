@@ -1,6 +1,7 @@
 import numpy as np  # used to handle numbers, data structures and mathematical functions
 import matplotlib
 import glob
+import getpass
 import os
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt  # MATLAB-like plotting
@@ -11,6 +12,7 @@ import argparse  # used to interpret parameters
 import math
 import sys
 import matplotlib.patches as mpatches
+import pymysql
 #  import re
 
 # ISSUE: "_" is currently not excluded like "." is, no known occurrences, outdated?
@@ -36,7 +38,7 @@ def translate_date_to_sec(ymdhms):
     if x_ == 'Unknown':
         return -1
     else:
-        temp_time = datetime.datetime.strptime(str(ymdhms, 'utf-8'), "%Y-%m-%d-%H-%M-%S")  # convert into datetime
+        temp_time = datetime.datetime.strptime(str(ymdhms, 'utf-8'), "%Y-%m-%d-%H-%M-%S")  # cxonvert into datetime
         return temp_time.timestamp()  # then convert into unix-seconds (timestamp)
 
 
@@ -105,10 +107,12 @@ def colorization(value, comp):
     else:
         return maximum
 
+number_id=0
 
 # Reads parameter inputs.
 ap = argparse.ArgumentParser()
 ap.add_argument("-o", nargs=1)
+ap.add_argument("-n", nargs='*', dest="Number_id")
 ap.add_argument("-src", nargs='*')
 ap.add_argument('--quota', dest='Quota', type=int, nargs=1)
 ap.add_argument('-q', dest='Quota', type=int, nargs=1)
@@ -123,10 +127,32 @@ e_parameters = essential_par((sys.argv[1:]))
 # convert input-parameters into data to interpret
 target_file = e_parameters[1][0]
 
-start_point = o_parameters.StartPoint
-if len(start_point) == 10:  # appends hours, minutes and seconds if only date given
-    start_point += "-00-00-00"
-start_point = (str(start_point)[::])
+Parameternummer = o_parameters.Number_id[0]
+if Parameternummer:   #tries obtaining quota and startdate from projectdatabase
+    user = getpass.getuser()
+    password = getpass.getpass()
+
+    db2 = pymysql.connect(host='hlr-hpc1.hrz.tu-darmstadt.de',
+                          port=3306,
+                          user=user,
+                          password=password,
+                          db='projektantrag')
+    cur = db2.cursor()
+    string = "SELECT projektstart,number_of_months,coreh FROM data WHERE id=" + str(
+        Parameternummer) + ";"
+    cur.execute(string)
+    DBDaten = cur.fetchall()[0]
+    start_point = datetime.datetime.fromtimestamp(DBDaten[0])
+    yearly_quota = DBDaten[2]/DBDaten[1]*12
+
+    #TODO: check if the yearly quota is calculated correctly. twelve times the corehours divided by number of months,
+    #TODO: to create a monthly quota, it is divised by twelve again.
+
+if o_parameters.StartPoint:
+    start_point = o_parameters.StartPoint
+    if len(start_point) == 10:  # appends hours, minutes and seconds if only date given
+        start_point += "-00-00-00"
+    start_point = (str(start_point)[::])
 if o_parameters.ProjectName is not None:  # if no name is given, sets the filter_n to ""
     filter_n = o_parameters.ProjectName
 else:
@@ -135,7 +161,8 @@ else:
 if o_parameters.Quota:
     yearly_quota = o_parameters.Quota[0]
 else:
-    yearly_quota = None
+    if not yearly_quota:
+        yearly_quota = None
 
 if yearly_quota:
     partial_quota = int(yearly_quota / 12)
@@ -169,9 +196,7 @@ if os.path.isfile(originals[0]):
         print(i)
     pass
 else:
-    #print(originals[0])
     sys.stderr.write("can not find sourcefile:'" + str(originals[0]) + "'\n")
-    print("________")
     sys.exit("File not found")
 
 
@@ -202,6 +227,9 @@ for i in range(1, len(originals)):
             Data = Data_temp_2
 Data_temp_2 = []
 print("total Datapoints:", len(Data))
+if len(Data) < 1:
+    sys.stderr.write("No data found")
+    sys.exit()
 flattenedData = np.array(Data).flatten().flatten()
 Data = flattenedData
 Data = Data[(Data[::]['End']).argsort()]
