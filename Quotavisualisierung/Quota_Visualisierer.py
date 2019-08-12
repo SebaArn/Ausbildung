@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt  # MATLAB-like plotting
 import datetime  # Used to convert our ascii dates into unix-seconds
 import argparse  # used to interpret parameters
 import math
+import matplotlib.gridspec
 import matplotlib.dates as mdates
 import matplotlib.ticker as mtick
 import sys
@@ -18,6 +19,8 @@ import pymysql
 #  import re
 
 fig = plt.gcf()
+gs1 = plt.subplot2grid((2,1),(0,0))
+
 f, (a0, a1) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [3, 1]})
 # ISSUE: "_" is currently not excluded like "." is, no known occurrences, outdated?
 # This program creates an image that visualizes a given log file in relation to a given quota.
@@ -32,6 +35,12 @@ plt.rcParams['figure.figsize'] = [6, 4]  # set global parameters, plotter initia
 # translate_date_to_sec receives a date and returns the date in unix-seconds, if it's a valid date,
 # (i.e not "Unknown" otherwise returns -1)
 # If there is more invalid inputs possible in the log-system, this has to be expanded.
+
+
+def scientific(x, pos):
+    # x:  tick value - ie. what you currently see in yticks
+    # pos: a position - ie. the index of the tick (from 0 to 9 in this example)
+    return '%.2E' % x
 
 def translate_date_to_sec(ymdhms):
     """
@@ -488,9 +497,8 @@ for i in range(len(tmp_x3)):
 perc = []
 
 a0.grid(True)
-
 axis2 = fig.add_subplot(212)
-a1.plot(tmp_x, delta,"purple") # percentages amplified by the lower bound to be more visible.
+a1.plot(tmp_x, delta,'.',"purple",) # percentages amplified by the lower bound to be more visible.
 plt.xlabel('time')
 plt.ylabel('Efficiency')
 #plt.plot(tmp_x4, percentages ,"red") # actual percentages
@@ -508,17 +516,18 @@ a1.grid(True)
 # Labels the two axes.
 #plt.ylabel('cores * hours')
 
-a1.set_ylim([0,100 ])
+a1.set_ylim([0,101])
 #a1.set_xlim = a0.get_xlim()
 #a1.tick_params(axis='both', which='both', labelsize = 7)
 #a0.tick_params(axis='both', which='both', labelsize = 7)
-a1.set_yticks(np.arange(0,100,10),minor=True)
-a1.set_yticks(np.arange(0,100,25))
+a1.set_yticks(np.arange(0,101,10),minor=True)
+a1.set_yticks(np.arange(0,101,25))
 
 a1.yaxis.set_major_formatter(mtick.PercentFormatter())
 plt.xlabel('Efficiency')
 plt.xlabel('enddate of process (date, time)')
-a1.xaxis.tick_top()
+a0.xaxis.tick_top()
+a1.xaxis.tick_bottom()
 beginning_dt = datetime.datetime.fromtimestamp(beginning-2629800)
 beg_14_months = beginning+36817200
 fourteen_dt = datetime.datetime.fromtimestamp(beg_14_months)
@@ -531,20 +540,26 @@ a0.set_xlim((beginning_dt, fourteen_dt))
 ten = 10
 a1.xlim = (beginning_dt, fourteen_dt)
 plt.sca(a0)
+a0.get_yaxis().set_major_formatter(
+    matplotlib.ticker.FuncFormatter(lambda x, p: format(int(x), ',')))
 plt.xticks(Xtics)
 plt.xlim(beginning_dt,fourteen_dt)
-plt.sca(a1)
+plt.ylabel('CPUhours')
 
+plt.sca(a1)
+plt.subplots_adjust(hspace=0.025,left=0.125, right=0.925, wspace=0.05, bottom=0.025,top=0.99)
 plt.xlim(beginning_dt,fourteen_dt)
 plt.xticks(Xtics)
-myFmt = mdates.DateFormatter('%m')
-a0.xaxis.set_major_formatter(myFmt)
+#plt.ticklabel_format(style='plain', axis='y')
+myFmt = mdates.DateFormatter('%b %y')
+#a0.xaxis.set_major_formatter(myFmt)
 a1.xaxis.set_major_formatter(myFmt)
+#a1.xaxis.set_major_formatter(myFmt)
 #a1.xticks(xtics)
 #a0.xtics(xtics)
 #manager = plt.get_current_fig_manager()
 # saves the graph as a file under the name given in the "Output" parameter
-f.tight_layout()
+#f.tight_layout()
 a1.grid(which='minor', alpha=0.2)
 a1.grid(which='major', alpha=0.5)
 f.set_size_inches((11, 8.5), forward=False)
