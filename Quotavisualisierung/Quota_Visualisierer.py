@@ -10,11 +10,15 @@ import matplotlib.pyplot as plt  # MATLAB-like plotting
 import datetime  # Used to convert our ascii dates into unix-seconds
 import argparse  # used to interpret parameters
 import math
+import matplotlib.dates as mdates
+import matplotlib.ticker as mtick
 import sys
 import matplotlib.patches as mpatches
 import pymysql
 #  import re
 
+fig = plt.gcf()
+f, (a0, a1) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [3, 1]})
 # ISSUE: "_" is currently not excluded like "." is, no known occurrences, outdated?
 # This program creates an image that visualizes a given log file in relation to a given quota.
 # Instances are currently approximations of months
@@ -23,8 +27,8 @@ thresholds = [0.7, 1.1, 1.5]  # If the usage this month is below thresholds time
 colors = ['#81c478', "#008000", '#ffa500']  # the quota will be colored in the equally indexed color.
 maximum = '#ff0000'  # if the usage is above the (highest threshold) * quota, the Quota will be colored in
 #  the given color 'maximum'.
+#plt.plot([1,2,3])
 plt.rcParams['figure.figsize'] = [6, 4]  # set global parameters, plotter initialisation
-
 # translate_date_to_sec receives a date and returns the date in unix-seconds, if it's a valid date,
 # (i.e not "Unknown" otherwise returns -1)
 # If there is more invalid inputs possible in the log-system, this has to be expanded.
@@ -127,12 +131,12 @@ e_parameters = essential_par((sys.argv[1:]))
 # convert input-parameters into data to interpret
 target_file = e_parameters[1][0]
 Parameternummer = 0
+#multidisplaying two different Graphs, one for Efficiency, one for the overall consumption
 if o_parameters.Number_id:
     Parameternummer = o_parameters.Number_id[0]
 if Parameternummer:   #tries obtaining quota and startdate from projectdatabase
     user = getpass.getuser()
     password = getpass.getpass()
-
     db2 = pymysql.connect(host='hlr-hpc1.hrz.tu-darmstadt.de',
                           port=3306,
                           user=user,
@@ -352,6 +356,14 @@ for x2 in range(0, np.size(tmp_x2)-1):
     tmp_x3.append(datetime.datetime.fromtimestamp(tmp_x2[x2]))
 tmp_x3 = tmp_x3[0:int(number_of_instances) * 3:1]
 
+#Tmp_y2[] ist die erreichte toptime
+
+
+monthly_cputime = []
+monthly_used = []
+effarray = []
+
+
 # determines the color via colorization and then plots three points, stops before the last interval to draw
 # sends the span of bottom left corner and top left corner, compares with span between top right and next bottom left
 if yearly_quota:
@@ -360,7 +372,9 @@ if yearly_quota:
                            tmp_y2[iterator * 3 + 2] - tmp_y2[iterator * 3])
         coordinates_x = ([tmp_x3[iterator * 3 + 1], tmp_x3[iterator * 3 + 2]])
         coordinates_y = [tmp_y2[iterator * 3 + 1], tmp_y2[iterator * 3 + 2]]
-        plt.fill_between(coordinates_x, 0, coordinates_y, color=col, alpha=0.99)
+        a0.fill_between(coordinates_x, 0, coordinates_y, color=col, alpha=0.99)
+
+        monthly_cputime.append(tmp_y2[iterator * 3 + 3] - tmp_y2[iterator * 3])
 # determines the last interval's color and draws it (uses the highest
 
 # recorded value as the end value of the ongoing time span).
@@ -377,7 +391,7 @@ if yearly_quota and len(tmp_x) >= 1:
     extrapolation_y.append(max(tmp_y[-1], tmp_y2[-3] + partial_quota))
     months_passed = math.ceil((extrapolation_x[1].timestamp() - tmp_x[0].timestamp()) / seconds_per_instance)
     extrapolation_y.append(extrapolation_y[-1] + (12 - months_passed) * partial_quota)
-    plt .plot(extrapolation_x, extrapolation_y, "black")
+    a0.plot(extrapolation_x, extrapolation_y, "black")
 
 # Sets the visual borders for the graphs; area of occurring values (main graph) +- 5%.
 beginning = x_start.timestamp()
@@ -396,15 +410,35 @@ print('Which results in an efficiency of', int(efficiency*10000)/100+0.005, "%")
 if efficiency < 0 or efficiency > 1:
     print("Efficiency is outside of it's boundaries, valid is only between 0 and 1")
 
-total_time = np.zeros(len(tmp_x))
-for i in range(0, len(total_time)):
-    total_time[i] = User_t[i] + System_t[i]
+accum_total_time = np.zeros(len(tmp_x))
+for i in range(0, len(accum_total_time)):
+    accum_total_time[i] = User_t[i] + System_t[i]
+#print(accum_total_time)
+delta = [0]
+total_time = []
+total_time.append(accum_total_time[0])
 
-axis.set_xlim(datetime.datetime.fromtimestamp(beginning), datetime.datetime.fromtimestamp(end))
+difference = [0]
+for i in range(1,len(accum_total_time)):
+    #print(i)
+    total_time.append(accum_total_time[i]- accum_total_time[i-1])
+    #delta.append(max(-100,(min(100, 100*(total_time[i]-(tmp_y[i]))))))
+
+    #difference.append()
+    delta.append(100*((accum_total_time[i]-accum_total_time[i-1])/(tmp_y[i]-tmp_y[i-1])))
+    if (delta[i]>100):
+        print((accum_total_time[i]-accum_total_time[i-1]),(tmp_y[i]-tmp_y[i-1]))
+    #difference.append(delta[i]-delta[i-1])
+#print(delta)
+
+
+
 if yearly_quota:  # ensuring that the extrapolated quota is still in frame
-    axis.set_ylim([y_start2 - (0.05 * y_end2), max(tmp_y[-1], extrapolation_y[-1]) * 1.05])
+    a0.set_ylim([y_start2 - (0.05 * y_end2), max(tmp_y[-1], extrapolation_y[-1]) * 1.15])
 else:  # No quota given, image is focused around occupied and utilized resources.
-    axis.set_ylim([y_start2 - (0.05 * y_end2), tmp_y[-1] * 1.05])
+    a0.set_ylim([y_start2 - (0.05 * y_end2), tmp_y[-1] * 1.05])
+
+
 
 #  Creation of patches for Labels
 red_patch = mpatches.Patch(color='#ff0000', alpha=0.7, label='>=150%')
@@ -415,22 +449,104 @@ grey_patch = mpatches.Patch(color='grey', alpha=0.7, label='Allocated Corehours'
 yellow_patch = mpatches.Patch(color='#d9e72e', alpha=0.49, label='Utilized Corehours')
 black_patch = mpatches.Patch(color='black', alpha=1, label='Extrapolation of guaranteed Corehours')
 
-plt.plot(tmp_x, total_time, '#d9e72e')  # plotting the TotatlCPU Graph
+a0.plot(tmp_x, accum_total_time, '#d9e72e')  # plotting the TotatlCPU Graph
 if yearly_quota:  # Legends for if there is a quota, or a shorter Legend in case there isn't.
-    plt.legend(handles=[red_patch, orange_patch, green_patch, light_green_patch, grey_patch, yellow_patch, black_patch])
+    a0.legend(handles=[red_patch, orange_patch, green_patch, light_green_patch, grey_patch, yellow_patch, black_patch])
 else:
-    plt.legend(handles=[grey_patch, yellow_patch])
-plt.fill_between(tmp_x, 0, total_time, color='#d9e72e', alpha=0.45)  # plotting the area below TotalCPU graph
-plt.plot(tmp_x, tmp_y, 'grey', fillstyle='bottom', alpha=0.35)  # plotting the main graph (cores * hours)
-plt.fill_between(tmp_x, 0, tmp_y, color="white", alpha=0.25)  # plotting the area below the corehours graph
+    a0.legend(handles=[grey_patch, yellow_patch])
+a0.fill_between(tmp_x, 0, accum_total_time, color='#d9e72e', alpha=0.45)  # plotting the area below TotalCPU graph
+a0.plot(tmp_x, tmp_y, 'grey', fillstyle='bottom', alpha=0.35)  # plotting the main graph (cores * hours)
+a0.fill_between(tmp_x, 0, tmp_y, color="white", alpha=0.25)  # plotting the area below the corehours graph
 
+if yearly_quota:
+    for iterator in range(0, int(number_of_instances - 1)):  # not possible for the last area, hence skipping it.
+        monthly_used.append(accum_total_time[iterator * 3 + 3] - accum_total_time[iterator * 3])
+
+
+percentages = [0]
+for i in range(len(monthly_cputime)):
+    percentages.append (10*(monthly_cputime[i]/monthly_used[i]))
+
+#pls.tplot(tmp_)
+bottom = axis.get_ylim()[0]
+top = 0
+print("BOTTOM = "+str(bottom))
+for i in range(len(percentages)):
+    effarray.append(percentages[i])
+tmp_x3 = []
+
+for i in range(len(tmp_x2)//3):
+    tmp_x3.append(tmp_x2[i*3])
+#print(len(effarray),len(tmp_x3))
+#print(effarray)
+#print(tmp_x3)
+tmp_x4 = []
+for i in range(len(tmp_x3)):
+    tmp_x4.append(datetime.datetime.fromtimestamp(tmp_x3[i]))
+#plt.plot(tmp_x4, effarray,"violet") # percentages amplified by the lower bound to be more visible.
+#plt.plot(tmp_x, difference,"violet") # percentages amplified by the lower bound to be more visible.
+perc = []
+
+a0.grid(True)
+
+axis2 = fig.add_subplot(212)
+a1.plot(tmp_x, delta,"purple") # percentages amplified by the lower bound to be more visible.
+plt.xlabel('time')
+plt.ylabel('Efficiency')
+#plt.plot(tmp_x4, percentages ,"red") # actual percentages
+#print(effarray)
+#print(tmp_x4)
+print(percentages)
+#print(sum(percentages)/(len(percentages)-1))
+
+
+#print(axis.get_ylim())
+eff_distance = 0 - axis.get_ylim()[0]
+#for
 # Creates a grid in the image to aid the viewer in visually processing the data.
-plt.grid(True)
+a1.grid(True)
 # Labels the two axes.
-plt.ylabel('cores * hours')
+#plt.ylabel('cores * hours')
+
+a1.set_ylim([0,100 ])
+#a1.set_xlim = a0.get_xlim()
+#a1.tick_params(axis='both', which='both', labelsize = 7)
+#a0.tick_params(axis='both', which='both', labelsize = 7)
+a1.set_yticks(np.arange(0,100,10),minor=True)
+a1.set_yticks(np.arange(0,100,25))
+
+a1.yaxis.set_major_formatter(mtick.PercentFormatter())
+plt.xlabel('Efficiency')
 plt.xlabel('enddate of process (date, time)')
-manager = plt.get_current_fig_manager()
+a1.xaxis.tick_top()
+beginning_dt = datetime.datetime.fromtimestamp(beginning-2629800)
+beg_14_months = beginning+36817200
+fourteen_dt = datetime.datetime.fromtimestamp(beg_14_months)
+Xtics = []
+for i in range (14):
+    Xtics.append(datetime.datetime.fromtimestamp(beginning-2629800 + i*2629800))
+print(Xtics)
+
+a0.set_xlim((beginning_dt, fourteen_dt))
+ten = 10
+a1.xlim = (beginning_dt, fourteen_dt)
+plt.sca(a0)
+plt.xticks(Xtics)
+plt.xlim(beginning_dt,fourteen_dt)
+plt.sca(a1)
+
+plt.xlim(beginning_dt,fourteen_dt)
+plt.xticks(Xtics)
+myFmt = mdates.DateFormatter('%m')
+a0.xaxis.set_major_formatter(myFmt)
+a1.xaxis.set_major_formatter(myFmt)
+#a1.xticks(xtics)
+#a0.xtics(xtics)
+#manager = plt.get_current_fig_manager()
 # saves the graph as a file under the name given in the "Output" parameter
-fig = plt.gcf()
-fig.set_size_inches((11, 8.5), forward=False)
-fig.savefig(target_file, dpi=500)
+f.tight_layout()
+a1.grid(which='minor', alpha=0.2)
+a1.grid(which='major', alpha=0.5)
+f.set_size_inches((11, 8.5), forward=False)
+f.savefig(target_file, dpi=500)
+print(perc)
