@@ -35,12 +35,20 @@ plt.rcParams['figure.figsize'] = [6, 4]  # set global parameters, plotter initia
 # translate_date_to_sec receives a date and returns the date in unix-seconds, if it's a valid date,
 # (i.e not "Unknown" otherwise returns -1)
 # If there is more invalid inputs possible in the log-system, this has to be expanded.
-
+fmt = "%Y-%m-%d-%H-%M"
 
 def scientific(x, pos):
     # x:  tick value - ie. what you currently see in yticks
     # pos: a position - ie. the index of the tick (from 0 to 9 in this example)
     return '%.2E' % x
+
+def first_of_month(date):
+    a_date = date.strftime(fmt)
+    sp = a_date.split("-")
+    recombining = sp[0]+"-"+sp[1]+"-"+"01-00-00"
+    retdate = datetime.datetime.strptime(recombining, fmt)
+    return retdate
+
 
 def translate_date_to_sec(ymdhms):
     """
@@ -171,7 +179,7 @@ if o_parameters.ProjectName is not None:  # if no name is given, sets the filter
     filter_n = o_parameters.ProjectName
 else:
     filter_n = ""
-
+yearly_quota = 0
 if o_parameters.Quota:
     yearly_quota = o_parameters.Quota[0]
 else:
@@ -316,6 +324,16 @@ for row in Data:
 if len(User_t) < 1:
     sys.stderr.write("No project in the given timeframe fits the given Projectname")
     sys.exit()
+
+
+beginning = first_of_month(x_start)
+beginning_dt = beginning
+Xtics = []
+Xtics.append(first_of_month(datetime.datetime.fromtimestamp(beginning_dt.timestamp()-1)))
+for i in range (14):
+    Xtics.append(first_of_month(datetime.datetime.fromtimestamp(Xtics[-1].timestamp()+2700000)))
+print(Xtics)
+
 # creates a cutoff after the array runs out of values (several data points were skipped, results in 0s) and sorts it.
 plot_array = plot_array[0:x][:]
 plot_array = plot_array[plot_array[:, 0].argsort()]
@@ -341,7 +359,10 @@ number_of_instances = ((x_end.timestamp() - x_start.timestamp()) / seconds_per_i
 # splits the graph into intervals and creates three values for each instance, to visualise quotas
 #
 # the coordinates for each Quota are saved in  tmp_x2 and tmp_y2
-tmp_x2 = np.arange(x_start.timestamp(), x_end.timestamp(), seconds_per_instance)
+Xticstimestamps = []
+for i in Xtics:
+    Xticstimestamps.append(i.timestamp())
+tmp_x2 = Xticstimestamps[1:]
 tmp_x2 = np.repeat(tmp_x2, 3)  # triples tmp_x2 to create thrice the number of values
 tmp_x2 = np.sort(tmp_x2)  # Repeat creates "abcabcabc". However "aaabbbccc" is needed, hence sorting.
 tmp_y2 = np.zeros(tmp_x2.shape)  # create a new y array to fill with quota coordinates.
@@ -389,27 +410,46 @@ if yearly_quota:
 # recorded value as the end value of the ongoing time span).
 axis = plt.gca()  # for plotting/saving the plot as it's own image
 
-#  Extrapolation
-if yearly_quota and len(tmp_x) >= 1:
-    extrapolation_x = []
-    extrapolation_y = []
-    extrapolation_x.append(tmp_x[-1])
-    extrapolation_x.append(datetime.datetime.fromtimestamp(tmp_x3[-1].timestamp() + seconds_per_instance))
-    extrapolation_x.append(datetime.datetime.fromtimestamp(tmp_x[0].timestamp() + seconds_per_instance * 12))
-    extrapolation_y.append(tmp_y[-1])
-    extrapolation_y.append(max(tmp_y[-1], tmp_y2[-3] + partial_quota))
-    months_passed = math.ceil((extrapolation_x[1].timestamp() - tmp_x[0].timestamp()) / seconds_per_instance)
-    extrapolation_y.append(extrapolation_y[-1] + (12 - months_passed) * partial_quota)
-    a0.plot(extrapolation_x, extrapolation_y, "black")
+
 
 # Sets the visual borders for the graphs; area of occurring values (main graph) +- 5%.
-beginning = x_start.timestamp()
+print(beginning)
 if start_point:
     beginning = datetime.datetime.strptime(start_point, "%Y-%m-%d-%H-%M-%S").timestamp()
     end = datetime.datetime.strptime(start_point, "%Y-%m-%d-%H-%M-%S").timestamp() + 365 * 24 * 3600
     beginning = beginning - 30*24*3600
     end = end + 30*24*3600
 
+extrapolation_x = []
+extrapolation_y = []
+#  Extrapolation
+if yearly_quota and len(tmp_x) >= 1:
+    monthsleft = int(12+((x_start.timestamp() - tmp_x[-1].timestamp())/2629800 + 0.9)//1)
+    month = 2629800
+    extrapolation_point_x = datetime.datetime.fromtimestamp(x_start.timestamp() + ((tmp_x[-1].timestamp()-x_start.timestamp()+2629799)//month)*month)
+    extrapolation_point_y = tmp_y[-1]
+    below = False
+    if (tmp_y2[-1]+partial_quota > extrapolation_point_y):
+        below = True
+    extrapolation_point_y = max(extrapolation_point_y, tmp_y2[-1]+partial_quota)
+
+    extrapolation_x.append(first_of_month(extrapolation_point_x))
+    extrapolation_y.append(extrapolation_point_y)
+    xtr_pt_x = extrapolation_point_x
+    xtr_pt_y = extrapolation_point_y
+    for i in range(monthsleft):
+        #extrapolation_x.append(datetime.datetime.fromtimestamp(tmp_x[-1].timestamp()+i*2629800))
+        extrapolation_x.append(first_of_month(datetime.datetime.fromtimestamp(xtr_pt_x.timestamp()+i*2629800)))
+        extrapolation_x.append(first_of_month(datetime.datetime.fromtimestamp(xtr_pt_x.timestamp() + (i + 1) * 2629800)))
+        extrapolation_x.append(first_of_month(datetime.datetime.fromtimestamp(xtr_pt_x.timestamp() + (i + 1) * 2629800)))
+        #extrapolation_y.append(tmp_y[-1]+i*partial_quota)
+        extrapolation_y.append(tmp_y[-1]+(i+1)*partial_quota)
+        extrapolation_y.append(tmp_y[-1]+(i+1)*partial_quota)
+        extrapolation_y.append(tmp_y[-1]+(i+1)*partial_quota)
+    a0.plot(extrapolation_x, extrapolation_y, "black")
+extrapolation_y.append(0)
+beg_14_months = beginning+36817200
+fourteen_dt = datetime.datetime.fromtimestamp(beg_14_months)
 # Print statements, to give feedback either onscreen or into a dedicated file to be piped into.
 print('The accumulated TotalCPU time is', int((User_t[-1] + System_t[-1]) * 100) / 100, "hours")
 print('and the number of accumulated corehours is', int(tmp_y[-1]*100)/100)
@@ -443,7 +483,7 @@ for i in range(1,len(accum_total_time)):
 
 
 if yearly_quota:  # ensuring that the extrapolated quota is still in frame
-    a0.set_ylim([y_start2 - (0.05 * y_end2), max(tmp_y[-1], extrapolation_y[-1]) * 1.15])
+    a0.set_ylim([y_start2 - (0.05 * y_end2), max(tmp_y[-1], extrapolation_y[-1]) * 1.2])
 else:  # No quota given, image is focused around occupied and utilized resources.
     a0.set_ylim([y_start2 - (0.05 * y_end2), tmp_y[-1] * 1.05])
 
@@ -486,9 +526,6 @@ tmp_x3 = []
 
 for i in range(len(tmp_x2)//3):
     tmp_x3.append(tmp_x2[i*3])
-#print(len(effarray),len(tmp_x3))
-#print(effarray)
-#print(tmp_x3)
 tmp_x4 = []
 for i in range(len(tmp_x3)):
     tmp_x4.append(datetime.datetime.fromtimestamp(tmp_x3[i]))
@@ -498,7 +535,7 @@ perc = []
 
 a0.grid(True)
 axis2 = fig.add_subplot(212)
-a1.plot(tmp_x, delta,'.',"purple",) # percentages amplified by the lower bound to be more visible.
+a1.plot(tmp_x, delta, '.', color="purple", alpha=0.9) # percentages amplified by the lower bound to be more visible.
 plt.xlabel('time')
 plt.ylabel('Efficiency')
 #plt.plot(tmp_x4, percentages ,"red") # actual percentages
@@ -508,15 +545,15 @@ print(percentages)
 #print(sum(percentages)/(len(percentages)-1))
 
 
+myFmt = mdates.DateFormatter('%b %y')
 #print(axis.get_ylim())
 eff_distance = 0 - axis.get_ylim()[0]
-#for
 # Creates a grid in the image to aid the viewer in visually processing the data.
 a1.grid(True)
 # Labels the two axes.
 #plt.ylabel('cores * hours')
 
-a1.set_ylim([0,101])
+a1.set_ylim([-5,105])
 #a1.set_xlim = a0.get_xlim()
 #a1.tick_params(axis='both', which='both', labelsize = 7)
 #a0.tick_params(axis='both', which='both', labelsize = 7)
@@ -528,13 +565,7 @@ plt.xlabel('Efficiency')
 plt.xlabel('enddate of process (date, time)')
 a0.xaxis.tick_top()
 a1.xaxis.tick_bottom()
-beginning_dt = datetime.datetime.fromtimestamp(beginning-2629800)
-beg_14_months = beginning+36817200
-fourteen_dt = datetime.datetime.fromtimestamp(beg_14_months)
-Xtics = []
-for i in range (14):
-    Xtics.append(datetime.datetime.fromtimestamp(beginning-2629800 + i*2629800))
-print(Xtics)
+
 
 a0.set_xlim((beginning_dt, fourteen_dt))
 ten = 10
@@ -543,15 +574,15 @@ plt.sca(a0)
 a0.get_yaxis().set_major_formatter(
     matplotlib.ticker.FuncFormatter(lambda x, p: format(int(x), ',')))
 plt.xticks(Xtics)
-plt.xlim(beginning_dt,fourteen_dt)
+#plt.xlim(Xtics[0],Xtics[-1])
 plt.ylabel('CPUhours')
+a0.xaxis.set_major_formatter(myFmt)
 
 plt.sca(a1)
-plt.subplots_adjust(hspace=0.025,left=0.125, right=0.925, wspace=0.05, bottom=0.025,top=0.99)
+plt.subplots_adjust(hspace=0.025,left=0.125, right=0.925, wspace=0.05, bottom=0.025,top=0.9)
 plt.xlim(beginning_dt,fourteen_dt)
-plt.xticks(Xtics)
+plt.xticks(Xtics,label=None)
 #plt.ticklabel_format(style='plain', axis='y')
-myFmt = mdates.DateFormatter('%b %y')
 #a0.xaxis.set_major_formatter(myFmt)
 a1.xaxis.set_major_formatter(myFmt)
 #a1.xaxis.set_major_formatter(myFmt)
