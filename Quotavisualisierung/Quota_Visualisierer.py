@@ -25,7 +25,7 @@ f, (a0, a1) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [3, 1]})
 # ISSUE: "_" is currently not excluded like "." is, no known occurrences, outdated?
 # This program creates an image that visualizes a given log file in relation to a given quota.
 # Instances are currently approximations of months
-seconds_per_instance = 365.25/12 * 24 * 60 * 60
+#seconds_per_instance = 365.25/12 * 24 * 60 * 60  # outdated, no longer used
 thresholds = [0.7, 1.1, 1.5]  # If the usage this month is below thresholds times the quota,
 colors = ['#81c478', "#008000", '#ffa500']  # the quota will be colored in the equally indexed color.
 maximum = '#ff0000'  # if the usage is above the (highest threshold) * quota, the Quota will be colored in
@@ -37,11 +37,7 @@ plt.rcParams['figure.figsize'] = [6, 4]  # set global parameters, plotter initia
 # If there is more invalid inputs possible in the log-system, this has to be expanded.
 fmt = "%Y-%m-%d-%H-%M"
 
-#def scientific(x, pos):
-    # x:  tick value - ie. what you currently see in yticks
-    # pos: a position - ie. the index of the tick (from 0 to 9 in this example)
-#    return '%.2E' % x
-
+# returns a date of the first second of the same month as the given date.
 def first_of_month(date):
     a_date = date.strftime(fmt)
     sp = a_date.split("-")
@@ -49,7 +45,17 @@ def first_of_month(date):
     retdate = datetime.datetime.strptime(recombining, fmt)
     return retdate
 
-
+def find_y_from_x(x, xarray, yarray):
+    holdx = xarray[0]
+    holdy = yarray[0]
+    for i in range(len(xarray)):
+        #print(xarray[i].timestamp(),holdx.timestamp(),x.timestamp())
+        if  (xarray[i].timestamp() >= holdx.timestamp() and xarray[i].timestamp() <= x.timestamp()):
+            #print(holdx,holdy)
+            holdx = xarray[i]
+            holdy = yarray[i]
+    return holdy
+# returns the timestamp of a given string representing a date.
 def translate_date_to_sec(ymdhms):
     """
     :param ymdhms: the year-month-day-hour-minute-second data (datetime.datetime) to be translated into unix-seconds.
@@ -127,7 +133,7 @@ def colorization(value, comp):
         return colors[2]
     else:
         return maximum
-
+quotaexists = 0
 number_id=0
 
 # Reads parameter inputs.
@@ -146,6 +152,7 @@ o_parameters = ap.parse_args()
 e_parameters = essential_par((sys.argv[1:]))
 # parse parameters into values, divide the Quota into months from the yearly quota.
 # convert input-parameters into data to interpret
+yearly_quota = 0
 target_file = e_parameters[1][0]
 Parameternummer = 0
 #multidisplaying two different Graphs, one for Efficiency, one for the overall consumption
@@ -179,15 +186,16 @@ if o_parameters.ProjectName is not None:  # if no name is given, sets the filter
     filter_n = o_parameters.ProjectName
 else:
     filter_n = ""
-yearly_quota = 0
 if o_parameters.Quota:
     yearly_quota = o_parameters.Quota[0]
 else:
     if not yearly_quota:
-        yearly_quota = None
+        yearly_quota = 0
 
-if yearly_quota:
+if yearly_quota>0:
     partial_quota = int(yearly_quota / 12)
+else:
+    partial_quota = 0
     # Script runs under the assumption, the inserted quota = 12* the instance-quota
 originals = e_parameters[0]
 if e_parameters[0]:
@@ -284,7 +292,7 @@ x_end = datetime.datetime.strptime("2000-01-01-01-01-01", "%Y-%m-%d-%H-%M-%S")  
 # Set y max to the estimated total amount of core-hours in a year for the Lichtenberg (for max,min computation)
 y_start1 = 1000000000000000000000000000000000  # initialized to a huge number so it's always larger.
 y_end1 = 0  # initialized to 0 to ensure it's always smaller than the first value (max is used)
-x = 0  # iterator variable, counts how many usable points of data exist
+x = 0  # i variable, counts how many usable points of data exist
 # gathers the Cores used and multiplies with the time (divided by 3600) to generate Corehours.
 System_t = []
 User_t = []
@@ -332,7 +340,6 @@ Xtics = []
 Xtics.append(first_of_month(datetime.datetime.fromtimestamp(beginning_dt.timestamp()-1)))
 for i in range (14):
     Xtics.append(first_of_month(datetime.datetime.fromtimestamp(Xtics[-1].timestamp()+2700000)))
-print(Xtics)
 
 # creates a cutoff after the array runs out of values (several data points were skipped, results in 0s) and sorts it.
 plot_array = plot_array[0:x][:]
@@ -355,7 +362,12 @@ tmp_x = [(datetime.datetime.fromtimestamp(i)) for i in plot_array[:, 0]]
 tmp_y = plot_array[:, 2]
 tmp_array = plot_array[:, (0, 2)]
 # the quota has to be drawn for each instance, instance is duration divided by instance_length + 1
-number_of_instances = ((x_end.timestamp() - x_start.timestamp()) / seconds_per_instance) + 1
+stringstart = datetime.datetime.strftime(x_start,fmt).split("-")
+stringend = datetime.datetime.strftime(x_end,fmt).split("-")
+number_of_instances = (int(stringend[0])-int(stringstart[0]))*12 + int(stringend[1])-int(stringstart[1])
+print("instances:" ,number_of_instances)
+#print(x_end)
+#print(x_start)
 # splits the graph into intervals and creates three values for each instance, to visualise quotas
 #l
 # the coordinates for each Quota are saved in  tmp_x2 and tmp_y2
@@ -364,23 +376,40 @@ for i in Xtics:
     Xticstimestamps.append(i.timestamp())
 tmp_x2 = Xticstimestamps[1:]
 tmp_x2 = np.repeat(tmp_x2, 3)  # triples tmp_x2 to create thrice the number of values
-tmp_x2 = np.sort(tmp_x2)  # Repeat creates "abcabcabc". However "aaabbbccc" is needed, hence sorting.
-tmp_y2 = np.zeros(tmp_x2.shape)  # create a new y array to fill with quota coordinates.
+tmp_x2 = np.sort(tmp_x2)  # Repeat creates "abcabcabc". However "aaabbbccc" is needed, hence sortin
+tmp_y2= []
 temporary = 0  # holding variable for graph-y values (reading the current core hours)
 # shifts the second of each triple along the y-axis, and the third along x- and y-axis
+print(yearly_quota)
+blocks_x = [first_of_month(x_start).timestamp()]
 if yearly_quota:
     for iterator_i in range(0, int(number_of_instances)):
-        for i in range(0, np.size(tmp_x)):
-            if tmp_x[i].timestamp() <= tmp_x2[iterator_i * 3]:  # the array was tripled, hence need to go 3 per loop.
-                temporary = tmp_y[i]  # Assigning the bottom left corner's y value to a temporary placeholder.
-            else:
-                break  # Found the highest value that is below the search value. It's in 'temporary'.
-        tmp_y2[iterator_i * 3 + 0] = temporary  # bottom left corner of each "L", can stay where the read value is.
-        tmp_y2[iterator_i * 3 + 1] = temporary + partial_quota  # moving top left corner of each "L" upwards.
-        tmp_y2[iterator_i * 3 + 2] = temporary + partial_quota  # moving top right corner upwards.
-        tmp_x2[iterator_i * 3 + 2] = tmp_x2[iterator_i * 3 + 2] + seconds_per_instance  # shifting top r. corner  right.
-
+        temporary = find_y_from_x(datetime.datetime.fromtimestamp(blocks_x[-1]),tmp_x,tmp_y)
+        tmp_y2.append(temporary)  # bottom left corner of each "L", can stay where the read value is.
+        tmp_y2.append(temporary + partial_quota)  # moving top left corner of each "L" upwards.
+          # moving top right corner upwards.
+        #print(blocks_x)
+        startcurrentmonth = first_of_month(datetime.datetime.fromtimestamp(blocks_x[-1]))
+        somewherenextmonth = datetime.datetime.fromtimestamp(startcurrentmonth.timestamp()+2764800)
+        startnextmonth = first_of_month(somewherenextmonth)
+        tmp_x2[iterator_i * 3] = startcurrentmonth.timestamp()
+        tmp_x2[iterator_i * 3+1] = startcurrentmonth.timestamp()
+        tmp_x2[iterator_i * 3+2] = startnextmonth.timestamp()
+        blocks_x.append(startcurrentmonth.timestamp())
+        blocks_x.append(startnextmonth.timestamp())
+blocks_x = blocks_x[1:]
+#print("LENGTH:",len(blocks_x))
+#print("blocks_x",blocks_x)
+#print("tmp_y2",tmp_y2)
+    # shi   fting top r. corner  right.
+#if yearly_quota:
+#    if (tmp_y2):
+#        tmp_y2.append(tmp_y2[-1]+partial_quota)
+#    else:
+#        tmp_y2 = [0,0,0]
 tmp_x3 = []
+#for i in range(len(tmp_x2)):
+    #print(datetime.datetime.fromtimestamp(tmp_x2[i]).strftime(fmt))
 # transforms x2 into a format that can be visualized via the plotter alongside the main plot
 for x2 in range(0, np.size(tmp_x2)-1):
     tmp_x3.append(datetime.datetime.fromtimestamp(tmp_x2[x2]))
@@ -393,18 +422,20 @@ monthly_cputime = []
 monthly_used = []
 effarray = []
 
+tmp_y2.append(tmp_y[-1])
 
 # determines the color via colorization and then plots three points, stops before the last interval to draw
 # sends the span of bottom left corner and top left corner, compares with span between top right and next bottom left
-if yearly_quota:
-    for iterator in range(0, int(number_of_instances - 1)):  # not possible for the last area, hence skipping it.
-        col = colorization(tmp_y2[iterator * 3 + 3] - tmp_y2[iterator * 3],
-                           tmp_y2[iterator * 3 + 2] - tmp_y2[iterator * 3])
-        coordinates_x = ([tmp_x3[iterator * 3 + 1], tmp_x3[iterator * 3 + 2]])
-        coordinates_y = [tmp_y2[iterator * 3 + 1], tmp_y2[iterator * 3 + 2]]
+if partial_quota:
+    for i in range(0,number_of_instances):  # not possible for the last area, hence skipping it.
+        #print("quoting")
+        col = colorization(find_y_from_x(datetime.datetime.fromtimestamp(blocks_x[i*2+1]),tmp_x,tmp_y) - find_y_from_x(datetime.datetime.fromtimestamp(blocks_x[i*2]),tmp_x,tmp_y),partial_quota)
+        coordinates_x = (datetime.datetime.fromtimestamp(blocks_x[i*2]),datetime.datetime.fromtimestamp(blocks_x[i*2]), datetime.datetime.fromtimestamp(blocks_x[i * 2+ 1]))
+        coordinates_y = [tmp_y2[i * 2 ],tmp_y2[i * 2+1 ], tmp_y2[i * 2+1]]
+        #print(coordinates_x,coordinates_y)
         a0.fill_between(coordinates_x, 0, coordinates_y, color=col, alpha=0.99)
 
-        monthly_cputime.append(tmp_y2[iterator * 3 + 3] - tmp_y2[iterator * 3])
+        monthly_cputime.append(tmp_y2[i * 2 + 1] - tmp_y2[i * 2])
 # determines the last interval's color and draws it (uses the highest
 
 # recorded value as the end value of the ongoing time span).
@@ -413,7 +444,6 @@ axis = plt.gca()  # for plotting/saving the plot as it's own image
 
 
 # Sets the visual borders for the graphs; area of occurring values (main graph) +- 5%.
-print(beginning)
 if start_point:
     beginning = datetime.datetime.strptime(start_point, "%Y-%m-%d-%H-%M-%S").timestamp()
     end = datetime.datetime.strptime(start_point, "%Y-%m-%d-%H-%M-%S").timestamp() + 365 * 24 * 3600
@@ -423,35 +453,41 @@ if start_point:
 extrapolation_x = []
 extrapolation_y = []
 #  Extrapolation
+#extrapolation_y.app
+if (len(tmp_y2)<3):
+    tmp_y2.append(0)
+    tmp_y2.append(0)
+monthsleft = int(12 + ((x_start.timestamp() - tmp_x[-1].timestamp()) / 2629800 + 0.9) // 1)
 if yearly_quota and len(tmp_x) >= 1:
-    monthsleft = int(12+((x_start.timestamp() - tmp_x[-1].timestamp())/2629800 + 0.9)//1)
-    month = 2629800
-    extrapolation_point_x = datetime.datetime.fromtimestamp(x_start.timestamp() + ((tmp_x[-1].timestamp()-x_start.timestamp()+2629799)//month)*month)
-    extrapolation_point_y = tmp_y[-1]
-    below = False
-    if (tmp_y2[-1]+partial_quota > extrapolation_point_y):
-        below = True
-    extrapolation_point_y = max(extrapolation_point_y, tmp_y2[-1]+partial_quota)
-
+    #month = 2629800
+    extrapolation_point_x = first_of_month(tmp_x[-1])
+    extrapolation_point_y = find_y_from_x(tmp_x[-1],tmp_x,tmp_y)
+    extrapolation_point_y = max(extrapolation_point_y, tmp_y2[-3]+partial_quota)
+    extrapolation_point_y = extrapolation_point_y-partial_quota
     extrapolation_x.append(first_of_month(extrapolation_point_x))
     extrapolation_y.append(extrapolation_point_y)
     xtr_pt_x = extrapolation_point_x
     xtr_pt_y = extrapolation_point_y
-
+    print("left:",monthsleft)
     for i in range(monthsleft):
         #extrapolation_x.append(datetime.datetime.fromtimestamp(tmp_x[-1].timestamp()+i*2629800))
-        extrapolation_x.append(first_of_month(datetime.datetime.fromtimestamp(xtr_pt_x.timestamp()+i*2629800)))
-        extrapolation_x.append(first_of_month(datetime.datetime.fromtimestamp(xtr_pt_x.timestamp() + (i + 1) * 2629800)))
-        extrapolation_x.append(first_of_month(datetime.datetime.fromtimestamp(xtr_pt_x.timestamp() + (i + 1) * 2629800)))
+        extrapolation_x.append(first_of_month(datetime.datetime.fromtimestamp(xtr_pt_x.timestamp()+i*2851200)))
+        extrapolation_x.append(first_of_month(datetime.datetime.fromtimestamp(xtr_pt_x.timestamp() + i * 2851200)))
+        extrapolation_x.append(first_of_month(datetime.datetime.fromtimestamp(xtr_pt_x.timestamp() + (i + 1) * 2851200)))
         #extrapolation_y.append(tmp_y[-1]+i*partial_quota)
+        extrapolation_y.append(tmp_y[-1]+(i)*partial_quota)
         extrapolation_y.append(tmp_y[-1]+(i+1)*partial_quota)
         extrapolation_y.append(tmp_y[-1]+(i+1)*partial_quota)
-        extrapolation_y.append(tmp_y[-1]+(i+1)*partial_quota)
-    if (tmp_y[-1] < tmp_y2[-3]+partial_quota):
-        extrapolation_y = [tmp_y[-1]+tmp_y2[-3]].append(extrapolation_y)
-    a0.plot(extrapolation_x, extrapolation_y, "black")
+    #print(extrapolation_y)
+    #print(len(extrapolation_y))
+    #print(len(extrapolation_x))
+    if (monthsleft):
+        a0.plot(extrapolation_x, extrapolation_y, "black")
 
-extrapolation_y.append(0)
+if (monthsleft):
+    extrapolation_y.append(0)
+else:
+    extrapolation_y = [0]
 beg_14_months = beginning+36817200
 fourteen_dt = datetime.datetime.fromtimestamp(beg_14_months)
 # Print statements, to give feedback either onscreen or into a dedicated file to be piped into.
@@ -487,8 +523,10 @@ for i in range(1,len(accum_total_time)):
 
 
 if yearly_quota:  # ensuring that the extrapolated quota is still in frame
-    a0.set_ylim([y_start2 - (0.05 * y_end2), max(tmp_y[-1], extrapolation_y[-1]) * 1.2])
+    a0.set_ylim([y_start2 - (0.05 * y_end2), max(tmp_y[-1], max(extrapolation_y)) * 1.2])
+    print("limit",a0.get_ylim()[1])
 else:  # No quota given, image is focused around occupied and utilized resources.
+    print("NO YEARLY DETECTED")
     a0.set_ylim([y_start2 - (0.05 * y_end2), tmp_y[-1] * 1.05])
 
 
@@ -512,16 +550,14 @@ a0.plot(tmp_x, tmp_y, 'grey', fillstyle='bottom', alpha=0.35)  # plotting the ma
 a0.fill_between(tmp_x, 0, tmp_y, color="white", alpha=0.25)  # plotting the area below the corehours graph
 
 if yearly_quota:
-    for iterator in range(0, int(number_of_instances - 1)):  # not possible for the last area, hence skipping it.
-        monthly_used.append(accum_total_time[iterator * 3 + 3] - accum_total_time[iterator * 3])
+    for i in range(0, int(number_of_instances)):  # not possible for the last area, hence skipping it.
+        monthly_used.append(accum_total_time[i * 3 + 3] - accum_total_time[i * 3])
 
 
 percentages = [0]
 for i in range(len(monthly_cputime)):
     percentages.append (10*(monthly_cputime[i]/monthly_used[i]))
 
-bottom = axis.get_ylim()[0]
-top = 0
 for i in range(len(percentages)):
     effarray.append(percentages[i])
 tmp_x3 = []
@@ -535,27 +571,26 @@ perc = []
 a0.grid(True)
 axis2 = fig.add_subplot(212)
 a1.plot(tmp_x, delta, '.', color="purple", alpha=0.9) # percentages amplified by the lower bound to be more visible.
-plt.xlabel('time')
 plt.ylabel('Efficiency')
 
-nothing = mdates.DateFormatter(' ')
 
 # Formats the Date into Month and Year.
 myFmt = mdates.DateFormatter('%b %y')
+nothing = mdates.DateFormatter(' ')
+
 eff_distance = 0 - axis.get_ylim()[0]
 # Creates a grid in the image to aid the viewer in visually processing the data.
 a1.grid(True)
-a1.set_ylim([-5,105])
-a1.set_yticks(np.arange(0,101,10),minor=True)
-a1.set_yticks(np.arange(0,101,25))
+a1.set_ylim([-5, 105])
+a1.set_yticks(np.arange(0, 101, 10),minor=True) # minor tick-lines are much thinner than regular ones
+a1.set_yticks(np.arange(0, 101, 25))
 a1.yaxis.set_major_formatter(mtick.PercentFormatter())
 plt.xlabel('Efficiency')
 plt.xlabel('enddate of process (date, time)')
-a0.xtics_label= False
+a0.xaxis.tick_top()
 a0.set_xlim((beginning_dt, fourteen_dt))
 a1.xlim = (beginning_dt, fourteen_dt)
 plt.sca(a0)
-#a0.axes.get_yaxis().ticklabel_format(style='sci')
 plt.ticklabel_format(axis='y', style='sci', scilimits=(0, 4))
 plt.xticks(Xtics)
 plt.ylabel('CPUhours')
@@ -571,9 +606,10 @@ plt.xticks(Xtics)
 a0.xaxis.set_major_formatter(nothing) # removes the Xtic notations
 a1.xaxis.set_major_formatter(myFmt) # puts the
 # autospacing
-#f.tight_layout()
+# f.tight_layout()
 a1.grid(which='minor', alpha=0.2)
 a1.grid(which='major', alpha=0.5)
 f.set_size_inches((11, 8.5), forward=False)
 # saves the graph as a file under the name given in the "Output" parameter
 f.savefig(target_file, dpi=500)
+#print(tmp_y2)
