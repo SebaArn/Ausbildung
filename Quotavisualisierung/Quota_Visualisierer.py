@@ -1,22 +1,22 @@
 import numpy as np  # used to handle numbers, data structures and mathematical functions
 import matplotlib
 import glob
-import getpass
-import os
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt  # MATLAB-like plotting
 import datetime  # Used to convert our ascii dates into unix-seconds
 import argparse  # used to interpret parameters
-import math
 import matplotlib.dates as mdates
 import matplotlib.ticker as mtick
 from matplotlib.ticker import ScalarFormatter
 import sys
 import matplotlib.patches as mpatches
 import pymysql
+import getpass
+import os
+matplotlib.use('Agg')
+
 
 fig = plt.gcf()
-gs1 = plt.subplot2grid((2,1),(0,0))
+gs1 = plt.subplot2grid((2, 1), (0, 0))
 nutzergraph = False
 f, (a0, a1) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [3, 1]})
 # ISSUE: "_" is currently not excluded like "." is, no known occurrences, outdated?
@@ -27,12 +27,11 @@ thresholds = [0.7, 1.1, 1.5]  # If the usage this month is below thresholds time
 colors = ['#81c478', "#008000", '#ffa500']  # the quota will be colored in the equally indexed color.
 maximum = '#ff0000'  # if the usage is above the (highest threshold) * quota, the Quota will be colored in
 #  the given color 'maximum'.
-# plt.plot([1,2,3])
 plt.rcParams['figure.figsize'] = [6, 4]  # set global parameters, plotter initialisation
 # translate_date_to_sec receives a date and returns the date in unix-seconds, if it's a valid date,
 # (i.e not "Unknown" otherwise returns -1)
 # If there is more invalid inputs possible in the log-system, this has to be expanded.
-fmt = "%Y-%m-%d-%H-%M"
+fmt = "%Y-%m-%d-%H-%M"  # standard format for Dates, year month, day, hour, minute
 
 
 def init():
@@ -252,8 +251,7 @@ else:
 if yearly_quota > 0:
     partial_quota = int(yearly_quota / 12)
 else:
-    partial_quota = 0
-    # Script runs under the assumption, the inserted quota = 12* the instance-quota
+    partial_quota = 0  # Script runs under the assumption, the inserted quota = 12* the instance-quota
 originals = e_parameters[0]
 if e_parameters[0]:
     pass
@@ -268,13 +266,11 @@ data_type = np.dtype(
      ('AllocCPUS', 'i4'),
      ('NNodes', 'i4'), ('NCPUS', 'i4'), ('CPUTimeRAW', 'uint64'), ('ElapsedRaw', 'uint64'), ('Start', '|S256'),
      ('End', '|S256'), ('TotalCPU', '|S256'), ('UserCPU', '|S256'), ('SystemCPU', '|S256')])
-
 # loads the file specified in original/Source, noteworthy are 'allocCPUS', 'Start' and 'End' (3,26,27)
 # the total data available is: "JobIDRaw,Account,User,ReqCPUS,ReqMem,ReqNodes,AllocNodes,AllocCPUS,NNodes,NCPUS,NTasks,
 # State,CPUTimeRAW,ElapsedRaw,TotalCPU,SystemCPU,UserCPU,MinCPU,AveCPU,MaxDiskRead,AveDiskRead,MaxDiskWrite,
 # AveDiskWrite,MaxRSS,AveRSS,Submit,Start,End,Layout,ReqTRES,AllocTRES,ReqGRES,AllocGRES,Cluster,Partition,
 # Submit,Start,End"
-
 if os.path.isfile(originals[0]):
     print("visualizing files:")
     for i in originals:
@@ -283,16 +279,13 @@ if os.path.isfile(originals[0]):
 else:
     sys.stderr.write("can not find sourcefile:'" + str(originals[0]) + "'\n")
     sys.exit("File not found")
-
 Data = np.loadtxt(originals[0], dtype=data_type, delimiter='|', skiprows=0,
-                  usecols=(0, 1, 3, 5, 6, 7, 8, 9, 12, 13, 26, 27, 14, 16, 15)
-                  )
+                  usecols=(0, 1, 3, 5, 6, 7, 8, 9, 12, 13, 26, 27, 14, 16, 15))
 Data_temp_2 = []
 counter = 0
 for j in Data:
     if 'Unknown' not in str(j['End']) and '.' not in str(j['JobID']) and filter_n in str(j['Account']):
         Data_temp_2.append(j)
-
 Data = Data_temp_2
 for i in range(1, len(originals)):
     Data_temp = np.loadtxt(originals[i], dtype=data_type, delimiter='|', skiprows=0,
@@ -301,7 +294,6 @@ for i in range(1, len(originals)):
     for j in Data_temp:
         if 'Unknown' not in str(j['End']) and '.' not in str(j['JobID']) and filter_n in str(j['Account']):
             Data_temp_2.append(j)
-
     if Data_temp_2:
         if len(Data) > 0:
             Data = np.append(Data, Data_temp_2)
@@ -315,17 +307,14 @@ flattenedData = np.array(Data).flatten().flatten()
 Data = flattenedData
 Data = Data[(Data[::]['End']).argsort()]
 Data = np.array(Data)
-
 if len(Data) < 1:
     sys.stderr.write("No data in file.")
     sys.exit()
-
 if start_point == "None":
     x = Data[0][10]
     x = (str(x)[2::])
     x = x[:-1:]
     start_point = x
-
 highest_data = max(Data[::]['End'])
 highest_data = str(highest_data)
 highest_data = highest_data[2:-1]
@@ -335,7 +324,6 @@ if highest_data < start_point:
 datetime.datetime.strptime(start_point, "%Y-%m-%d-%H-%M-%S")
 x = (datetime.datetime.strptime(start_point, "%Y-%m-%d-%H-%M-%S")).timestamp()
 x += 3600*24*365
-
 plot_array = (np.zeros((Data.size, 3)))  # three values are needed for each data point, time, cputime and accumulated
 # Set a start date way in the future
 x_start = datetime.datetime.strptime("3000-01-01-01-01-01", "%Y-%m-%d-%H-%M-%S")  # a date far in the future
@@ -418,7 +406,6 @@ Xticstimestamps = []
 for i in Xtics:
     Xticstimestamps.append(i.timestamp())
 tmp_y2 = []
-temporary = 0  # holding variable for graph-y values (reading the current core hours)
 # shifts the second of each triple along the y-axis, and the third along x- and y-axis
 blocks_x = [first_of_month(x_start).timestamp()]
 if yearly_quota:
@@ -444,9 +431,9 @@ tmp_y2.append(tmp_y[-1])
 if partial_quota:
     for i in range(0, number_of_instances):  # not possible for the last area, hence skipping it.
         col = colorization(find_y_from_x(datetime.datetime.fromtimestamp(blocks_x[i*2+1]), tmp_x, tmp_y) -
-                           find_y_from_x(datetime.datetime.fromtimestamp(blocks_x[i*2]), tmp_x, tmp_y),partial_quota)
-        coordinates_x = (datetime.datetime.fromtimestamp(blocks_x[i*2]),datetime.datetime.fromtimestamp(blocks_x[i*2]),
-                         datetime.datetime.fromtimestamp(blocks_x[i * 2+ 1]))
+                           find_y_from_x(datetime.datetime.fromtimestamp(blocks_x[i*2]), tmp_x, tmp_y), partial_quota)
+        coordinates_x = (datetime.datetime.fromtimestamp(blocks_x[i*2]), datetime.datetime.fromtimestamp(blocks_x[i*2]),
+                         datetime.datetime.fromtimestamp(blocks_x[i * 2 + 1]))
         coordinates_y = [tmp_y2[i * 2], tmp_y2[i * 2+1], tmp_y2[i * 2+1]]
         a0.fill_between(coordinates_x, 0, coordinates_y, color=col, alpha=0.99)
 
@@ -454,8 +441,8 @@ if partial_quota:
     value1 = find_y_from_x(datetime.datetime.fromtimestamp(blocks_x[-1]), tmp_x, tmp_y)
     value2 = find_y_from_x(datetime.datetime.fromtimestamp(blocks_x[-2]), tmp_x, tmp_y)
     col = colorization(value1 - value2, partial_quota)
-    coordinates_x = (datetime.datetime.fromtimestamp(blocks_x[-2]),datetime.datetime.fromtimestamp(blocks_x[-2]),
-                         datetime.datetime.fromtimestamp(blocks_x[-1]))
+    coordinates_x = (datetime.datetime.fromtimestamp(blocks_x[-2]), datetime.datetime.fromtimestamp(blocks_x[-2]),
+                     datetime.datetime.fromtimestamp(blocks_x[-1]))
     coordinates_y = (value2,value2+partial_quota,value2+partial_quota)
     a0.fill_between(coordinates_x, 0, coordinates_y, color=col, alpha=0.99)
 # determines the last interval's color and draws it (uses the highest
@@ -467,13 +454,12 @@ if start_point:
     end = datetime.datetime.strptime(start_point, "%Y-%m-%d-%H-%M-%S").timestamp() + 365 * 24 * 3600
     beginning = beginning - 30*24*3600
     end = end + 30*24*3600
-
 extrapolation_x = []
 extrapolation_y = []
-if len(tmp_y2)<3:
+if len(tmp_y2) < 3:
     tmp_y2.append(0)
     tmp_y2.append(0)
-    #TODO: check if monthsleft aus DBZugriff funktioniert
+# TODO: check if monthsleft aus DBZugriff funktioniert
 monthsleft = int(12 + ((x_start.timestamp() - tmp_x[-1].timestamp()) / 2629800 + 0.9) // 1)
 if yearly_quota and len(tmp_x) >= 1:
     extrapolation_point_x = first_of_month(tmp_x[-1])
@@ -525,12 +511,11 @@ for i in range(0, len(accum_total_time)):
 delta = [0]
 total_time = []
 total_time.append(accum_total_time[0])
-
 difference = [0]
 for i in range(1,len(accum_total_time)):
     total_time.append(accum_total_time[i]- accum_total_time[i-1])
     delta.append(100*((accum_total_time[i]-accum_total_time[i-1])/(tmp_y[i]-tmp_y[i-1])))
-    if delta[i]> 100:
+    if delta[i] > 100:
         a = 0
 if yearly_quota:  # ensuring that the extrapolated quota is still in frame
     a0.set_ylim([y_start2 - (0.05 * y_end2), max(tmp_y[-1], max(extrapolation_y)) * 1.2])
@@ -547,12 +532,10 @@ grey_patch = mpatches.Patch(color='grey', alpha=0.7, label='Allocated corehours'
 yellow_patch = mpatches.Patch(color='#d9e72e', alpha=0.49, label='Utilized corehours')
 black_patch = mpatches.Patch(color='black', alpha=1, label='Remaining corehours')
 a0.plot(tmp_x, accum_total_time, '#d9e72e')  # plotting the TotatlCPU Graph
-
 if yearly_quota:  # Legends for if there is a quota, or a shorter Legend in case there isn't.
     a0.legend(handles=[red_patch, orange_patch, green_patch, light_green_patch, grey_patch, yellow_patch, black_patch])
 else:
     a0.legend(handles=[grey_patch, yellow_patch])
-
 a0.fill_between(tmp_x, 0, accum_total_time, color='#d9e72e', alpha=0.45)  # plotting the area below TotalCPU graph
 a0.plot(tmp_x, tmp_y, 'grey', fillstyle='bottom', alpha=0.35)  # plotting the main graph (cores * hours)
 a0.fill_between(tmp_x, 0, tmp_y, color="white", alpha=0.25)  # plotting the area below the corehours graph
@@ -613,7 +596,7 @@ unit = ""
 for i in range(len(a0.get_yticklabels())):
     scale = math.log(tmp_y[-1],10)//1
     new_ylabels.append(str(a0.get_yticks()[i]/(10**scale)).split(".")[0])
-    unit ="10^"+ str(int(math.log(tmp_y[-1],10)//1))
+    unit = "10^" + str(int(math.log(tmp_y[-1],10)//1))
 if unit:
     if unit == "10^6":
         unit = "in Million"
@@ -629,13 +612,13 @@ plt.ylabel("CPUhours ("+unit+")")
 a0.set_xticklabels = emptylabels
 a0.set_yticklabels(new_ylabels)
 plt.sca(a1)
-#dictates gap in height, left border, right border, gap in width, bottom border, top border
+# dictates gap in height, left border, right border, gap in width, bottom border, top border
 plt.subplots_adjust(hspace=0.03,left=0.1, right=0.925, wspace=0.07, bottom=0.035, top=0.975)
 plt.xlim(beginning_dt,fourteen_dt)
 plt.xticks(Xtics)
-a0.xaxis.set_major_formatter(nothing)# removes the Xtic notations
+a0.xaxis.set_major_formatter(nothing)  # removes the Xtic notations
 a1.xaxis.set_major_formatter(myFmt)
-# autospacing
+# auto spacing
 # f.tight_layout()
 a1.grid(which='minor', alpha=0.2)
 a1.grid(which='major', alpha=0.5)
