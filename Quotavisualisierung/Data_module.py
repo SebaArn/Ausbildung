@@ -53,7 +53,7 @@ def find_y_from_given_time(time, xarray, yarray): # retrieves the closest value 
     return holdy
 
 
-def analyze_day(date, yD):  # gathers the occupied and utilized times for every job on a specific day. also time of the
+def gather_pre_efficiency_data_day(date, yD):  # gathers the occupied and utilized times for every job on a specific day. also time of the
     reserv = 0  # latest job to finish on said day
     used = 0
     time = 0
@@ -68,7 +68,7 @@ def analyze_day(date, yD):  # gathers the occupied and utilized times for every 
     return [reserv, used, time]
 
 
-def analyze_month(date_of_month, dataset): # gathers info on all individual days of a month.
+def gather_efficiencies_for_month(date_of_month, dataset): # gathers info on all individual days of a month.
     daily_eff_days = []
     daily_eff_eff = []
     daysofmonth = []
@@ -82,7 +82,7 @@ def analyze_month(date_of_month, dataset): # gathers info on all individual days
     days = []
     effs = []
     for i in daysofmonth:
-        reserv_used_time = analyze_day(i, dataset)
+        reserv_used_time = gather_pre_efficiency_data_day(i, dataset)
         if reserv_used_time[0] >= 1:
             reserved.append(reserv_used_time[0])
             used.append(reserv_used_time[1])
