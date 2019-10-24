@@ -10,10 +10,9 @@ import Data_module as D_
 colors = ['#81c478', "#008000", '#ffa500']  # the quota will be colored in the equally indexed color.
 thresholds = [0.7, 1.1, 1.5]  # If the usage this month is below thresholds times the quota,
 maximum = '#ff0000'  # if the usage is above the (highest threshold) * quota, the Quota will be colored in
-#  the given color 'maximum'.
-#f, (a0, a1) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [3, 1]})
-
+#                      the given color 'maximum'.
 # separates the quotas into four categories, taking the ratios from thresholds and the results from colors
+
 
 def colorization(value, comp):
     """
@@ -32,9 +31,9 @@ def colorization(value, comp):
         return maximum
 
 
-def generate_plot(partial_quota,number_of_instances,f,a0,a1,tmp_y2,tmp_x,tmp_y,blocks_x,start_point,Xtics,
-                 yearly_quota,x_start,finished,User_t,System_t,y_start2,y_end2,beginning_dt,nutzergraph,
-                  fig,x_end,Data):
+def generate_plot(partial_quota, number_of_instances, f, a0, a1, tmp_y2, tmp_x, tmp_y, blocks_x, start_point, Xtics,
+                  yearly_quota, x_start, finished, User_t, System_t, y_start2, y_end2, beginning_dt, nutzergraph,
+                  fig, x_end, Data):
     global daily_eff_days
     global daily_eff_eff
     fmt = "%Y-%m-%d-%H-%M"  # standard format for Dates, year month, day, hour, minute
@@ -44,18 +43,17 @@ def generate_plot(partial_quota,number_of_instances,f,a0,a1,tmp_y2,tmp_x,tmp_y,b
     monthly_used = []
     effarray = []
     tmp_y2.append(tmp_y[-1])
-    if partial_quota:
+    if partial_quota:  #### drawing of the quota####
         for i in range(0, number_of_instances):  # not possible for the last area, hence skipping it.
-            col = colorization(D_.find_y_from_x(datetime.datetime.fromtimestamp(blocks_x[i*2+1]), tmp_x, tmp_y) -
-                               D_.find_y_from_x(datetime.datetime.fromtimestamp(blocks_x[i*2]), tmp_x, tmp_y), partial_quota)
+            col = colorization(D_.find_y_from_given_time(datetime.datetime.fromtimestamp(blocks_x[i*2+1]), tmp_x, tmp_y) -
+                               D_.find_y_from_given_time(datetime.datetime.fromtimestamp(blocks_x[i*2]), tmp_x, tmp_y), partial_quota)
             coordinates_x = (datetime.datetime.fromtimestamp(blocks_x[i*2]), datetime.datetime.fromtimestamp(blocks_x[i*2]),
                              datetime.datetime.fromtimestamp(blocks_x[i * 2 + 1]))
             coordinates_y = [tmp_y2[i * 2], tmp_y2[i * 2+1], tmp_y2[i * 2+1]]
             a0.fill_between(coordinates_x, 0, coordinates_y, color=col, alpha=0.99)
-
             monthly_cputime.append(tmp_y2[i * 2 + 1] - tmp_y2[i * 2])
-        value1 = D_.find_y_from_x(datetime.datetime.fromtimestamp(blocks_x[-1]), tmp_x, tmp_y)
-        value2 = D_.find_y_from_x(datetime.datetime.fromtimestamp(blocks_x[-2]), tmp_x, tmp_y)
+        value1 = D_.find_y_from_given_time(datetime.datetime.fromtimestamp(blocks_x[-1]), tmp_x, tmp_y)
+        value2 = D_.find_y_from_given_time(datetime.datetime.fromtimestamp(blocks_x[-2]), tmp_x, tmp_y)
         col = colorization(value1 - value2, partial_quota)
         coordinates_x = (datetime.datetime.fromtimestamp(blocks_x[-2]), datetime.datetime.fromtimestamp(blocks_x[-2]),
                          datetime.datetime.fromtimestamp(blocks_x[-1]))
@@ -65,7 +63,7 @@ def generate_plot(partial_quota,number_of_instances,f,a0,a1,tmp_y2,tmp_x,tmp_y,b
     # recorded value as the end value of the ongoing time span).
     axis = plt.gca()  # for plotting/saving the plot as it's own image
     # Sets the visual borders for the graphs; area of occurring values (main graph) +- 5%.
-    if start_point:
+    if start_point:  # setting the beginning and end of the graph
         beginning = datetime.datetime.strptime(start_point, "%Y-%m-%d-%H-%M-%S").timestamp()
         end = datetime.datetime.strptime(start_point, "%Y-%m-%d-%H-%M-%S").timestamp() + 365 * 24 * 3600
         beginning = beginning - 30*24*3600
@@ -79,12 +77,12 @@ def generate_plot(partial_quota,number_of_instances,f,a0,a1,tmp_y2,tmp_x,tmp_y,b
     monthsleft = int(12 + ((x_start.timestamp() - tmp_x[-1].timestamp()) / 2629800 + 0.9) // 1)
     if yearly_quota and len(tmp_x) >= 1:
         extrapolation_point_x = D_.first_of_month(tmp_x[-1])
-        extrapolation_point_y = D_.find_y_from_x(tmp_x[-1],tmp_x,tmp_y)
-        extrapolation_point_y = max(extrapolation_point_y, D_.find_y_from_x(D_.first_of_month(extrapolation_point_x),tmp_x,tmp_y)+partial_quota)
+        extrapolation_point_y = D_.find_y_from_given_time(tmp_x[-1],tmp_x,tmp_y)
+        extrapolation_point_y = max(extrapolation_point_y, D_.find_y_from_given_time(D_.first_of_month(extrapolation_point_x),tmp_x,tmp_y)+partial_quota)
         extrapolation_x.append(D_.first_of_month(extrapolation_point_x))
         extrapolation_x.append(D_.first_of_month(extrapolation_point_x))
         extrapolation_x.append(D_.first_of_month(datetime.datetime.fromtimestamp(extrapolation_point_x.timestamp()+2851200)))
-        extrapolation_y.append(D_.find_y_from_x(extrapolation_point_x, tmp_x, tmp_y))
+        extrapolation_y.append(D_.find_y_from_given_time(extrapolation_point_x, tmp_x, tmp_y))
         extrapolation_y.append(max(extrapolation_y[0]+partial_quota, tmp_y[-1]))
         extrapolation_y.append(extrapolation_y[-1])
         expoint_y = extrapolation_y[-1]
@@ -93,12 +91,12 @@ def generate_plot(partial_quota,number_of_instances,f,a0,a1,tmp_y2,tmp_x,tmp_y,b
             extrapolation_y[-1] = tmp_y[-1]
             expoint_y = extrapolation_y[-1]
         else:
-            expoint_y = max(D_.find_y_from_x(extrapolation_point_x,tmp_x,tmp_y)+partial_quota,tmp_y[-1])
+            expoint_y = max(D_.find_y_from_given_time(extrapolation_point_x,tmp_x,tmp_y)+partial_quota,tmp_y[-1])
             extrapolation_y[-2] = expoint_y
             extrapolation_y[-1] = expoint_y
         xtr_pt_x = extrapolation_point_x
         xtr_pt_y = extrapolation_point_y
-        for i in range(1,monthsleft):
+        for i in range(1,monthsleft):  # The three points required for each block
             extrapolation_x.append(D_.first_of_month(datetime.datetime.fromtimestamp(xtr_pt_x.timestamp()+i*2851200)))
             extrapolation_x.append(D_.first_of_month(datetime.datetime.fromtimestamp(xtr_pt_x.timestamp() + i * 2851200)))
             extrapolation_x.append(D_.first_of_month(datetime.datetime.fromtimestamp(xtr_pt_x.timestamp() + (i + 1) * 2851200)))
@@ -139,7 +137,7 @@ def generate_plot(partial_quota,number_of_instances,f,a0,a1,tmp_y2,tmp_x,tmp_y,b
     else:  # No quota given, image is focused around occupied and utilized resources.
         print("NO YEARLY DETECTED")
         a0.set_ylim([y_start2 - (0.05 * y_end2), tmp_y[-1] * 1.05])
-    #  Creation of patches for Labels
+    #####  Creation of patches for Labels #####
     red_patch = mpatches.Patch(color='#ff0000', alpha=0.7, label='>=150%')
     orange_patch = mpatches.Patch(color='#ffa500', alpha=0.7, label='>=110%,<150%')
     green_patch = mpatches.Patch(color='#008000', alpha=0.8, label='>=70%,<110%')
@@ -164,7 +162,6 @@ def generate_plot(partial_quota,number_of_instances,f,a0,a1,tmp_y2,tmp_x,tmp_y,b
             percentages.append(10*(monthly_cputime[i]/monthly_used[i]))
     for i in range(len(percentages)):
         effarray.append(percentages[i])
-    perc = []
     a0.grid(True)
     axis2 = fig.add_subplot(212)
     a1.plot(tmp_x, delta, '.', color="purple", markersize=5, alpha=0.35)  # percentages amplified by the lower bound to
@@ -187,15 +184,14 @@ def generate_plot(partial_quota,number_of_instances,f,a0,a1,tmp_y2,tmp_x,tmp_y,b
             formatteddates.append(datetime.datetime.strptime(transp, fmt))
     eff_days = []
     for i in daily_eff_days:
-        eff_days.append(datetime.datetime.strptime(str(i)[2:18],fmt))
-    a1.plot(eff_days,daily_eff_eff, '.',color="Red", markersize=1.75, alpha=0.75)
+        eff_days.append(datetime.datetime.strptime(str(i)[2:18], fmt))
+    a1.plot(eff_days, daily_eff_eff, '.', color="Red", markersize=1.75, alpha=0.75)
     eff_distance = 0 - axis.get_ylim()[0]
-    # Creates a grid in the image to aid the viewer in visually processing the data.
-    a1.grid(True)
+    a1.grid(True)    # Creates a grid in the image to aid the viewer in visually processing the data.
     a1.set_ylim([-5, 105])
     if nutzergraph:
-        a1.set_ylim([0,100])
-    a1.set_yticks(np.arange(0, 101, 10), minor=True) # minor tick-lines are much thinner than regular ones
+        a1.set_ylim([0, 100])  # Usergraphs don't display anything above 100% or below 0%.
+    a1.set_yticks(np.arange(0, 101, 10), minor=True)  # minor tick-lines are much thinner than regular ones
     a1.set_yticks(np.arange(0, 101, 25))
     a1.yaxis.set_major_formatter(mtick.PercentFormatter())
     plt.xlabel('Efficiency')
@@ -232,13 +228,11 @@ def generate_plot(partial_quota,number_of_instances,f,a0,a1,tmp_y2,tmp_x,tmp_y,b
     a0.set_yticklabels(new_ylabels)
     plt.sca(a1)
     # dictates gap in height, left border, right border, gap in width, bottom border, top border
-    plt.subplots_adjust(hspace=0.03,left=0.1, right=0.925, wspace=0.07, bottom=0.035, top=0.975)
-    plt.xlim(beginning_dt,fourteen_dt)
+    plt.subplots_adjust(hspace=0.03, left=0.1, right=0.925, wspace=0.07, bottom=0.035, top=0.975)
+    plt.xlim(beginning_dt, fourteen_dt)
     plt.xticks(Xtics)
-    a0.xaxis.set_major_formatter(nothing)  # removes the Xtic notations
+    a0.xaxis.set_major_formatter(nothing)  # removes the x-tic notations
     a1.xaxis.set_major_formatter(myFmt)
-    # auto spacing
-    # f.tight_layout()
     a1.grid(which='minor', alpha=0.2)
     a1.grid(which='major', alpha=0.5)
     f.set_size_inches((11, 8.5), forward=False)

@@ -1,20 +1,16 @@
 import numpy as np  # used to handle numbers, data structures and mathematical functions
 import matplotlib
 matplotlib.use('Agg')
-#import glob
-import math
 import Parsing
 import matplotlib.pyplot as plt  # MATLAB-like plotting
 import datetime  # Used to convert our ascii dates into unix-seconds
 import argparse  # used to interpret parameters
 import matplotlib.dates as mdates
-import matplotlib.ticker as mtick
-from matplotlib.ticker import ScalarFormatter
 import sys
-import matplotlib.patches as mpatches
-#import pymysql
-#import getpass
 import os
+import math
+import getpass
+import pymysql
 import Data_module as D_
 import drawing
 
@@ -24,24 +20,17 @@ nutzergraph = False
 f, (a0, a1) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [3, 1]})
 # ISSUE: "_" is currently not excluded like "." is, no known occurrences, outdated?
 # This program creates an image that visualizes a given log file in relation to a given quota.
-# Instances are currently approximations of months
-# seconds_per_instance = 365.25/12 * 24 * 60 * 60  # outdated, no longer used
 
 plt.rcParams['figure.figsize'] = [6, 4]  # set global parameters, plotter initialisation
 # translate_date_to_sec receives a date and returns the date in unix-seconds, if it's a valid date,
-# (i.e not "Unknown" otherwise returns -1)
-# If there is more invalid inputs possible in the log-system, this has to be expanded.
 fmt = "%Y-%m-%d-%H-%M"  # standard format for Dates, year month, day, hour, minute
-
 quotaexists = 0
 number_id=0
 # Formats the Date into Month and Year.
 myFmt = mdates.DateFormatter('%b %y')
 nothing = mdates.DateFormatter(' ')
-# Reads parameter inputs.
-ap = argparse.ArgumentParser()
-Parsing.argparsinit(ap,sys.argv)
-
+ap = argparse.ArgumentParser() # Reads parameter inputs.
+Parsing.argparsinit(ap, sys.argv)
 originals = Parsing.get_original()
 partial_quota = Parsing.get_partial_quota()
 yearly_quota = Parsing.get_yearly_quota()
@@ -52,6 +41,25 @@ nutzergraph = Parsing.get_nutzer_graph()
 finished = Parsing.get_finished()
 number_of_months_DB = Parsing.get_number_of_months()
 target = Parsing.get_target()
+Parameternummer = Parsing.get_parameter_nr()
+#print("PARANR",Parameternummer)
+###### SQL connection to projectrequest database #####
+if Parameternummer:  # tries obtaining quota and startdate from projectdatabase
+    user = getpass.getuser()
+    password = getpass.getpass()
+    db2 = pymysql.connect(host='hlr-hpc1.hrz.tu-darmstadt.de',
+                          port=3306,
+                          user=user,
+                          password=password,
+                          db='projektantrag')
+    cur = db2.cursor()
+    string = "SELECT projektstart,number_of_months,coreh FROM data WHERE id=" + str(
+        Parameternummer) + ";"
+    cur.execute(string)
+    DBDaten = cur.fetchall()[0]
+    number_of_months_DB = DBDaten[1]
+    start_point = datetime.datetime.fromtimestamp(DBDaten[0])
+    yearly_quota = DBDaten[2] / DBDaten[1] * 12
 
 # Data type to store the different fields in.
 data_type = np.dtype(
@@ -68,7 +76,6 @@ if os.path.isfile(originals[0]):
     print("visualizing files:")
     for i in originals:
         print(i)
-    pass
 else:
     sys.stderr.write("can not find sourcefile:'" + str(originals[0]) + "'\n")
     sys.exit("File not found")
@@ -115,8 +122,7 @@ if highest_data < start_point:
     sys.stderr.write('The start_point is after the latest date in the file')
     sys.exit()
 datetime.datetime.strptime(start_point, "%Y-%m-%d-%H-%M-%S")
-x = (datetime.datetime.strptime(start_point, "%Y-%m-%d-%H-%M-%S")).timestamp()
-x += 3600*24*365
+x = (datetime.datetime.strptime(start_point, "%Y-%m-%d-%H-%M-%S")).timestamp()+3600*24*365
 plot_array = (np.zeros((Data.size, 3)))  # three values are needed for each data point, time, cputime and accumulated
 # Set a start date way in the future
 x_start = datetime.datetime.strptime("3000-01-01-01-01-01", "%Y-%m-%d-%H-%M-%S")  # a date far in the future
@@ -183,12 +189,12 @@ tmp_x = [(datetime.datetime.fromtimestamp(i)) for i in plot_array[:, 0]]
 tmp_y = plot_array[:, 2]
 tmp_array = plot_array[:, (0, 2)]
 # the quota has to be drawn for each instance, instance is duration divided by instance_length + 1
-stringstart = datetime.datetime.strftime(x_start,fmt).split("-")
-stringend = datetime.datetime.strftime(x_end,fmt).split("-")
+stringstart = datetime.datetime.strftime(x_start, fmt).split("-")
+stringend = datetime.datetime.strftime(x_end, fmt).split("-")
 number_of_instances = (int(stringend[0])-int(stringstart[0]))*12 + int(stringend[1])-int(stringstart[1])
 # splits the graph into intervals and creates three values for each instance, to visualise quotas
 # the coordinates for each Quota are saved in  tmp_x2 and tmp_y2
-months = int(tmp_x[-1].strftime(fmt).split("-")[1])- int(x_start.strftime(fmt).split("-")[1]) + 2
+months = int(tmp_x[-1].strftime(fmt).split("-")[1]) - int(x_start.strftime(fmt).split("-")[1]) + 2
 if number_of_months_DB:
     months = number_of_months_DB
 Xtics = []
@@ -203,7 +209,7 @@ tmp_y2 = []
 blocks_x = [D_.first_of_month(x_start).timestamp()]
 if yearly_quota:
     for iterator_i in range(0, int(number_of_instances)):
-        temporary = D_.find_y_from_x(datetime.datetime.fromtimestamp(blocks_x[-1]), tmp_x, tmp_y)
+        temporary = D_.find_y_from_given_time(datetime.datetime.fromtimestamp(blocks_x[-1]), tmp_x, tmp_y)
         tmp_y2.append(temporary)  # bottom left corner of each "L", can stay where the read value is.
         tmp_y2.append(temporary + partial_quota)  # End of the L
         startcurrentmonth = D_.first_of_month(datetime.datetime.fromtimestamp(blocks_x[-1]))
@@ -213,13 +219,9 @@ if yearly_quota:
         blocks_x.append(startnextmonth.timestamp())
     blocks_x = blocks_x[1:]
     blocks_x.append(D_.first_of_month(datetime.datetime.fromtimestamp(blocks_x[-1]+3456000)).timestamp())
-tmp_x3 = []
 # transforms x2 into a format that can be visualized via the plotter alongside the main plot
-monthly_cputime = []
-monthly_used = []
-effarray = []
 tmp_y2.append(tmp_y[-1])
-f = drawing.generate_plot(partial_quota,number_of_instances,f,a0,a1,tmp_y2,tmp_x,tmp_y,blocks_x,start_point,Xtics,
-                 yearly_quota,x_start,finished,User_t,System_t,y_start2,y_end2,beginning_dt,nutzergraph,
-                  fig,x_end,Data)
+f = drawing.generate_plot(partial_quota, number_of_instances, f, a0, a1, tmp_y2, tmp_x, tmp_y, blocks_x, start_point,
+                          Xtics, yearly_quota, x_start, finished, User_t, System_t, y_start2, y_end2, beginning_dt,
+                          nutzergraph, fig, x_end, Data)
 f.savefig(target, dpi=500)

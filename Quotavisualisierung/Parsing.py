@@ -1,6 +1,4 @@
 import argparse
-import pymysql
-import getpass
 import sys
 import datetime
 import glob
@@ -14,6 +12,9 @@ number_of_months_DB = 0
 partial_quota = 0
 finished = False
 target_file = ""
+Parameternummer = 0
+
+
 def essential_par(parameters):  # reads the parameters and interprets -src, -o as well as every parameter not beginning with "-"
     if len(parameters) < 2:
         print(parameters)
@@ -45,7 +46,7 @@ def essential_par(parameters):  # reads the parameters and interprets -src, -o a
     return [sources, output, optpara]
 
 
-def argparsinit(param, sysargv):
+def argparsinit(param, sysargv): ### Reads the Console Inputs, interprets them for the main module to request
     global finished
     global yearly_quota
     global start_point
@@ -54,6 +55,7 @@ def argparsinit(param, sysargv):
     global number_of_months_DB
     global partial_quota
     global finished
+    global Parameternummer
     global target_file
     ap = param
     ap.add_argument("-o", nargs=1)
@@ -83,26 +85,9 @@ def argparsinit(param, sysargv):
     yearly_quota = 0
     number_of_months_DB = 0
     target_file = e_parameters[1][0]
-    Parameternummer = 0
     # multidisplaying two different Graphs, one for Efficiency, one for the overall consumption
     if o_parameters.Number_id:
         Parameternummer = o_parameters.Number_id[0]
-    if Parameternummer:  # tries obtaining quota and startdate from projectdatabase
-        user = getpass.getuser()
-        password = getpass.getpass()
-        db2 = pymysql.connect(host='hlr-hpc1.hrz.tu-darmstadt.de',
-                              port=3306,
-                              user=user,
-                              password=password,
-                              db='projektantrag')
-        cur = db2.cursor()
-        string = "SELECT projektstart,number_of_months,coreh FROM data WHERE id=" + str(
-            Parameternummer) + ";"
-        cur.execute(string)
-        DBDaten = cur.fetchall()[0]
-        number_of_months_DB = DBDaten[1]
-        start_point = datetime.datetime.fromtimestamp(DBDaten[0])
-        yearly_quota = DBDaten[2] / DBDaten[1] * 12
     if o_parameters.StartPoint:
         start_point = o_parameters.StartPoint
         if len(start_point) == 10:  # appends hours, minutes and seconds if only date given
@@ -160,8 +145,14 @@ def get_number_of_months():
 def get_partial_quota():
     return partial_quota
 
+
 def get_finished():
     return finished
 
+
 def get_target():
     return target_file
+
+
+def get_parameter_nr():
+    return Parameternummer
