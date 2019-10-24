@@ -11,7 +11,7 @@ import os
 import math
 import getpass
 import pymysql
-import Data_module as D_
+import Time_functions as D_
 import drawing
 
 fig = plt.gcf()

@@ -6,7 +6,7 @@ import datetime
 import matplotlib.ticker as mtick
 import matplotlib.dates as mdates
 from matplotlib.ticker import ScalarFormatter
-import Data_module as D_
+import Time_functions as D_
 colors = ['#81c478', "#008000", '#ffa500']  # the quota will be colored in the equally indexed color.
 thresholds = [0.7, 1.1, 1.5]  # If the usage this month is below thresholds times the quota,
 maximum = '#ff0000'  # if the usage is above the (highest threshold) * quota, the Quota will be colored in
@@ -96,7 +96,7 @@ def generate_plot(partial_quota, number_of_instances, f, a0, a1, tmp_y2, tmp_x, 
             extrapolation_y[-1] = expoint_y
         xtr_pt_x = extrapolation_point_x
         xtr_pt_y = extrapolation_point_y
-        for i in range(1,monthsleft):  # The three points required for each block
+        for i in range(1, monthsleft):  # The three points required for each block
             extrapolation_x.append(D_.first_of_month(datetime.datetime.fromtimestamp(xtr_pt_x.timestamp()+i*2851200)))
             extrapolation_x.append(D_.first_of_month(datetime.datetime.fromtimestamp(xtr_pt_x.timestamp() + i * 2851200)))
             extrapolation_x.append(D_.first_of_month(datetime.datetime.fromtimestamp(xtr_pt_x.timestamp() + (i + 1) * 2851200)))
@@ -168,7 +168,7 @@ def generate_plot(partial_quota, number_of_instances, f, a0, a1, tmp_y2, tmp_x, 
     plt.ylabel('Efficiency')  # be more visible.
     for i in range(int(x_start.timestamp()),int(x_end.timestamp()),2764800):
         daily = []
-        r = D_.analyze_month(datetime.datetime.fromtimestamp(i),Data)
+        r = D_.gather_efficiencies_for_month(datetime.datetime.fromtimestamp(i), Data)
         daily_eff_days = r[-2]
         daily_eff_eff = r[-1]
         r = r[:-2]
