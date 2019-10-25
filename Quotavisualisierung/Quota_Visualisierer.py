@@ -217,7 +217,9 @@ if yearly_quota:
         startnextmonth = D_.first_of_month(somewherenextmonth)
         blocks_x.append(startcurrentmonth.timestamp())
         blocks_x.append(startnextmonth.timestamp())
-    blocks_x = blocks_x[1:]
+    if len(blocks_x) > 1:
+        blocks_x = blocks_x[1:]
+
     blocks_x.append(D_.first_of_month(datetime.datetime.fromtimestamp(blocks_x[-1]+3456000)).timestamp())
 # transforms x2 into a format that can be visualized via the plotter alongside the main plot
 tmp_y2.append(tmp_y[-1])

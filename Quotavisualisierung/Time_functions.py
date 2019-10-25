@@ -53,18 +53,24 @@ def find_y_from_given_time(time, xarray, yarray): # retrieves the closest value 
     return holdy
 
 
-def gather_pre_efficiency_data_day(date, yD):  # gathers the occupied and utilized times for every job on a specific day. also time of the
+def gather_pre_efficiency_data_day(date, yD, print_):  # gathers the occupied and utilized times for every job on a specific day. also time of the
     reserv = 0  # latest job to finish on said day
     used = 0
     time = 0
+    #print(date[:11])
     for i in range(len(yD)):
-        if str(date[:11]) in str(yD[i][11][:10]):
+        #if print_:
+        #    print(date, yD[i][11])
+        if str(date)[:11] in str(yD[i][11]):
+            #if print_:
+            #   print("Found match", date, str(yD[i][11][:10]))
             reserv += int(str(yD[i][5]))*int(yD[i][9])  # ['AllocCPUs'])*int(yD[i]['ElapsedRAW'])/3600
             if len(yD[i][13]) > 3:
                 used += translate_time_to_sec(str(yD[i][13]))  # ['UserCPU'])[2:])
                 used += translate_time_to_sec(str(yD[i][14]))  # ['SystemCPU']
             time = (yD[i][11])
             used = float(used)
+
     return [reserv, used, time]
 
 
@@ -82,7 +88,7 @@ def gather_efficiencies_for_month(date_of_month, dataset): # gathers info on all
     days = []
     effs = []
     for i in daysofmonth:
-        reserv_used_time = gather_pre_efficiency_data_day(i, dataset)
+        reserv_used_time = gather_pre_efficiency_data_day(i, dataset, False)
         if reserv_used_time[0] >= 1:
             reserved.append(reserv_used_time[0])
             used.append(reserv_used_time[1])
@@ -92,3 +98,26 @@ def gather_efficiencies_for_month(date_of_month, dataset): # gathers info on all
     daily_eff_days = daily_eff_days + days
     daily_eff_eff = daily_eff_eff + effs
     return [reserved, used, time, daily_eff_days, daily_eff_eff]
+
+
+def gather_efficiencies_for_week(date_of_week, dataset):
+    reserved = []
+    used = []
+    time = []
+    #print("Date_week:", date_of_week)
+    #append(str(i[11])[2:12])
+    for i in range(int(date_of_week.timestamp()), int(date_of_week.timestamp())+604801, 86400):
+        #print("Date from i:",datetime.datetime.fromtimestamp(i))
+        day = gather_pre_efficiency_data_day(datetime.datetime.fromtimestamp(i).strftime(fmt), dataset, True)
+        if day:
+            print("Day,",day)
+            if day[0] > 0 and day[1]> 0:
+                reserved.append(day[0])
+                used.append(day[1])
+                time.append(day[2])
+    print("res,used,time:", reserved, used, time)
+    if sum(used) > 0:
+        print(type(time[-1]))
+        return [sum(used)/sum(reserved), time[-1]]
+
+    return []

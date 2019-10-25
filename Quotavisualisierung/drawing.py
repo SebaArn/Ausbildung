@@ -97,12 +97,12 @@ def generate_plot(partial_quota, number_of_instances, f, a0, a1, tmp_y2, tmp_x, 
         xtr_pt_x = extrapolation_point_x
         xtr_pt_y = extrapolation_point_y
         for i in range(1, monthsleft):  # The three points required for each block
-            extrapolation_x.append(D_.first_of_month(datetime.datetime.fromtimestamp(xtr_pt_x.timestamp()+i*2851200)))
+            extrapolation_x.append(D_.first_of_month(datetime.datetime.fromtimestamp(xtr_pt_x.timestamp()+ i * 2851200)))
             extrapolation_x.append(D_.first_of_month(datetime.datetime.fromtimestamp(xtr_pt_x.timestamp() + i * 2851200)))
             extrapolation_x.append(D_.first_of_month(datetime.datetime.fromtimestamp(xtr_pt_x.timestamp() + (i + 1) * 2851200)))
-            extrapolation_y.append(expoint_y+(i-1)*partial_quota)
-            extrapolation_y.append(expoint_y+(i)*partial_quota)
-            extrapolation_y.append(expoint_y+(i)*partial_quota)
+            extrapolation_y.append(expoint_y + (i-1) * partial_quota)
+            extrapolation_y.append(expoint_y + i * partial_quota)
+            extrapolation_y.append(expoint_y + i * partial_quota)
         if monthsleft:
             a0.plot(extrapolation_x[3:], extrapolation_y[3:], "black")
     if monthsleft:
@@ -137,7 +137,7 @@ def generate_plot(partial_quota, number_of_instances, f, a0, a1, tmp_y2, tmp_x, 
     else:  # No quota given, image is focused around occupied and utilized resources.
         print("NO YEARLY DETECTED")
         a0.set_ylim([y_start2 - (0.05 * y_end2), tmp_y[-1] * 1.05])
-    #####  Creation of patches for Labels #####
+    #####  Creation of patches for Legend #####
     red_patch = mpatches.Patch(color='#ff0000', alpha=0.7, label='>=150%')
     orange_patch = mpatches.Patch(color='#ffa500', alpha=0.7, label='>=110%,<150%')
     green_patch = mpatches.Patch(color='#008000', alpha=0.8, label='>=70%,<110%')
@@ -166,13 +166,13 @@ def generate_plot(partial_quota, number_of_instances, f, a0, a1, tmp_y2, tmp_x, 
     axis2 = fig.add_subplot(212)
     a1.plot(tmp_x, delta, '.', color="purple", markersize=5, alpha=0.35)  # percentages amplified by the lower bound to
     plt.ylabel('Efficiency')  # be more visible.
-    for i in range(int(x_start.timestamp()),int(x_end.timestamp()),2764800):
-        daily = []
+    daily = []
+    dates = []
+    for i in range(int(x_start.timestamp()), int(x_end.timestamp()), 2764800):
         r = D_.gather_efficiencies_for_month(datetime.datetime.fromtimestamp(i), Data)
         daily_eff_days = r[-2]
         daily_eff_eff = r[-1]
         r = r[:-2]
-        dates = []
         for j in range(len(r[0])):
             if r[1][j] > 0:
                 daily.append(100*r[1][j]/r[0][j])
@@ -183,9 +183,29 @@ def generate_plot(partial_quota, number_of_instances, f, a0, a1, tmp_y2, tmp_x, 
             transp = str(i)[2:18]
             formatteddates.append(datetime.datetime.strptime(transp, fmt))
     eff_days = []
+    weekly_efficiencies = []
+    weekly_timestamps = []
+    for i in range(int(x_start.timestamp()), int(x_end.timestamp()), 604800):
+        week = D_.gather_efficiencies_for_week(datetime.datetime.fromtimestamp(i), Data)
+        if week:
+            weekly_efficiencies.append(week[0]*100)
+            weekly_timestamps.append(week[1])
+    formatted_weekly_timestamps = []
+    for i in weekly_timestamps:
+        #print(type(i))
+        #if str(i) == i:
+        #    formatted_weekly_timestamps.append(i)
+        #else:
+        print(i)
+        formatted_weekly_timestamps.append(datetime.datetime.strptime(str(i)[2:-4],fmt))
+    print("form WEEKLY TIMESTAMPS",formatted_weekly_timestamps)
+    print("weekly efficiencies", weekly_efficiencies)
     for i in daily_eff_days:
         eff_days.append(datetime.datetime.strptime(str(i)[2:18], fmt))
-    a1.plot(eff_days, daily_eff_eff, '.', color="Red", markersize=1.75, alpha=0.75)
+    #print(weekly_timestamps, weekly_efficiencies)
+
+    a1.plot(formatted_weekly_timestamps, weekly_efficiencies, color="Red", markersize=1.75, alpha=0.75)
+    #a1.plot(eff_days, daily_eff_eff, '.', color="Red", markersize=1.75, alpha=0.75)
     eff_distance = 0 - axis.get_ylim()[0]
     a1.grid(True)    # Creates a grid in the image to aid the viewer in visually processing the data.
     a1.set_ylim([-5, 105])
@@ -209,14 +229,14 @@ def generate_plot(partial_quota, number_of_instances, f, a0, a1, tmp_y2, tmp_x, 
     new_ylabels = []
     unit = ""
     for i in range(len(a0.get_yticklabels())):
-        scale = math.log(tmp_y[-1], 10)//1
+        scale = math.log(tmp_y[-1]//2, 10)//1
         new_ylabels.append(str(a0.get_yticks()[i]/(10**scale)).split(".")[0])
-        unit = "10^" + str(int(math.log(tmp_y[-1], 10)//1))
+        unit = "10^" + str(int(math.log(tmp_y[-1]//2, 10)//1))
     if unit:
         if unit == "10^6":
-            unit = "in Million"
+            unit = "in million"
         if unit == "10^7":
-            unit = "in ten Million"
+            unit = "in ten million"
         if unit == "10^5":
             unit = "in hundred thousand"
         if unit == "10^4":
