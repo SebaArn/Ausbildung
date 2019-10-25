@@ -142,7 +142,7 @@ def generate_plot(partial_quota, number_of_instances, f, a0, a1, tmp_y2, tmp_x, 
     orange_patch = mpatches.Patch(color='#ffa500', alpha=0.7, label='>=110%,<150%')
     green_patch = mpatches.Patch(color='#008000', alpha=0.8, label='>=70%,<110%')
     light_green_patch = mpatches.Patch(color='#81c478', alpha=0.8, label='<70%')
-    grey_patch = mpatches.Patch(color='grey', alpha=0.7, label='Allocated corehours')
+    grey_patch = mpatches.Patch(color='dimgrey', alpha=0.75, label='Allocated corehours')
     yellow_patch = mpatches.Patch(color='#d9e72e', alpha=0.49, label='Utilized corehours')
     black_patch = mpatches.Patch(color='black', alpha=1, label='Remaining corehours')
     a0.plot(tmp_x, accum_total_time, '#d9e72e')  # plotting the TotatlCPU Graph
@@ -150,9 +150,9 @@ def generate_plot(partial_quota, number_of_instances, f, a0, a1, tmp_y2, tmp_x, 
         a0.legend(handles=[red_patch, orange_patch, green_patch, light_green_patch, grey_patch, yellow_patch, black_patch])
     else:
         a0.legend(handles=[grey_patch, yellow_patch])
-    a0.fill_between(tmp_x, 0, accum_total_time, color='#d9e72e', alpha=0.45)  # plotting the area below TotalCPU graph
-    a0.plot(tmp_x, tmp_y, 'grey', fillstyle='bottom', alpha=0.35)  # plotting the main graph (cores * hours)
-    a0.fill_between(tmp_x, 0, tmp_y, color="white", alpha=0.25)  # plotting the area below the corehours graph
+    a0.fill_between(tmp_x, 0, accum_total_time, color='#d9e72e', alpha=0.70)  # plotting the area below TotalCPU graph
+    a0.plot(tmp_x, tmp_y, 'dimgrey', fillstyle='bottom', alpha=0.75)  # plotting the main graph (cores * hours)
+    a0.fill_between(tmp_x, 0, tmp_y, color="grey", alpha=0.45)  # plotting the area below the corehours graph
     if yearly_quota:
         for i in range(0, int(number_of_instances)):  # not possible for the last area, hence skipping it.
             monthly_used.append(accum_total_time[i * 3 + 3] - accum_total_time[i * 3])
@@ -164,7 +164,11 @@ def generate_plot(partial_quota, number_of_instances, f, a0, a1, tmp_y2, tmp_x, 
         effarray.append(percentages[i])
     a0.grid(True)
     axis2 = fig.add_subplot(212)
+
+    a1legend1 = mpatches.Patch(color='Red', alpha=0.8, label="per day")
+    a1legend2 = mpatches.Patch(color='purple', alpha=0.8, label='per job')
     a1.plot(tmp_x, delta, '.', color="purple", markersize=5, alpha=0.35)  # percentages amplified by the lower bound to
+    a1.legend(handles =[a1legend1,a1legend2])
     plt.ylabel('Efficiency')  # be more visible.
     daily = []
     dates = []
@@ -183,29 +187,9 @@ def generate_plot(partial_quota, number_of_instances, f, a0, a1, tmp_y2, tmp_x, 
             transp = str(i)[2:18]
             formatteddates.append(datetime.datetime.strptime(transp, fmt))
     eff_days = []
-    weekly_efficiencies = []
-    weekly_timestamps = []
-    for i in range(int(x_start.timestamp()), int(x_end.timestamp()), 604800):
-        week = D_.gather_efficiencies_for_week(datetime.datetime.fromtimestamp(i), Data)
-        if week:
-            weekly_efficiencies.append(week[0]*100)
-            weekly_timestamps.append(week[1])
-    formatted_weekly_timestamps = []
-    for i in weekly_timestamps:
-        #print(type(i))
-        #if str(i) == i:
-        #    formatted_weekly_timestamps.append(i)
-        #else:
-        print(i)
-        formatted_weekly_timestamps.append(datetime.datetime.strptime(str(i)[2:-4],fmt))
-    print("form WEEKLY TIMESTAMPS",formatted_weekly_timestamps)
-    print("weekly efficiencies", weekly_efficiencies)
-    for i in daily_eff_days:
-        eff_days.append(datetime.datetime.strptime(str(i)[2:18], fmt))
-    #print(weekly_timestamps, weekly_efficiencies)
-
-    a1.plot(formatted_weekly_timestamps, weekly_efficiencies, color="Red", markersize=1.75, alpha=0.75)
-    #a1.plot(eff_days, daily_eff_eff, '.', color="Red", markersize=1.75, alpha=0.75)
+    #for i in dates:
+    #    eff_days.append(datetime.datetime.strptime(str(i)[2:18], fmt))
+    a1.plot(formatteddates, daily, '.', color="Red", markersize=3, alpha=0.85)
     eff_distance = 0 - axis.get_ylim()[0]
     a1.grid(True)    # Creates a grid in the image to aid the viewer in visually processing the data.
     a1.set_ylim([-5, 105])
