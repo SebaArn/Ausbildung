@@ -3,10 +3,14 @@ import numpy as np
 import matplotlib.pyplot as plt  # MATLAB-like plotting
 import math
 import datetime
+import io
+import PIL
+from PIL import Image
 import matplotlib.ticker as mtick
 import matplotlib.dates as mdates
 from matplotlib.ticker import ScalarFormatter
 import Time_functions as D_
+
 colors = ['#81c478', "#008000", '#ffa500']  # the quota will be colored in the equally indexed color.
 thresholds = [0.7, 1.1, 1.5]  # If the usage this month is below thresholds times the quota,
 maximum = '#ff0000'  # if the usage is above the (highest threshold) * quota, the Quota will be colored in
@@ -33,7 +37,11 @@ def colorization(value, comp):
 
 def generate_plot(partial_quota, number_of_instances, f, a0, a1, tmp_y2, tmp_x, tmp_y, blocks_x, start_point, Xtics,
                   yearly_quota, x_start, finished, User_t, System_t, y_start2, y_end2, beginning_dt, nutzergraph,
-                  fig, x_end, Data):
+                  fig, x_end, Data, filter_n):
+    if filter_n:
+        f.suptitle(str(filter_n),fontweight="bold")
+    else:
+        f.suptitle(str(Data[0]['Account'])[2:-1],fontweight="bold")
     global daily_eff_days
     global daily_eff_eff
     fmt = "%Y-%m-%d-%H-%M"  # standard format for Dates, year month, day, hour, minute
@@ -164,11 +172,10 @@ def generate_plot(partial_quota, number_of_instances, f, a0, a1, tmp_y2, tmp_x, 
         effarray.append(percentages[i])
     a0.grid(True)
     axis2 = fig.add_subplot(212)
-
     a1legend1 = mpatches.Patch(color='Red', alpha=0.8, label="per day")
     a1legend2 = mpatches.Patch(color='purple', alpha=0.8, label='per job')
     a1.plot(tmp_x, delta, '.', color="purple", markersize=5, alpha=0.35)  # percentages amplified by the lower bound to
-    a1.legend(handles =[a1legend1,a1legend2])
+    a1.legend(handles=[a1legend1,a1legend2])
     plt.ylabel('Efficiency')  # be more visible.
     daily = []
     dates = []
@@ -226,13 +233,15 @@ def generate_plot(partial_quota, number_of_instances, f, a0, a1, tmp_y2, tmp_x, 
         if unit == "10^4":
             unit = "in ten thousand"
         if unit == "10^3":
-            unit = "in thousand"
+            unit = "in hundred"
+        if unit == "10^3":
+            unit = "in hundred"
     plt.ylabel("CPUhours ("+unit+")")
     a0.set_xticklabels = emptylabels
     a0.set_yticklabels(new_ylabels)
     plt.sca(a1)
     # dictates gap in height, left border, right border, gap in width, bottom border, top border
-    plt.subplots_adjust(hspace=0.03, left=0.1, right=0.925, wspace=0.07, bottom=0.035, top=0.975)
+    plt.subplots_adjust(hspace=0.03, left=0.1, right=0.925, wspace=0.07, bottom=0.035, top=0.95)
     plt.xlim(beginning_dt, fourteen_dt)
     plt.xticks(Xtics)
     a0.xaxis.set_major_formatter(nothing)  # removes the x-tic notations
@@ -240,4 +249,11 @@ def generate_plot(partial_quota, number_of_instances, f, a0, a1, tmp_y2, tmp_x, 
     a1.grid(which='minor', alpha=0.2)
     a1.grid(which='major', alpha=0.5)
     f.set_size_inches((11, 8.5), forward=False)
+    ## for png compression
+    #ram = io.BytesIO()
+    #plt.savefig(ram, format='png')
+    #ram.seek(0)
+    #im = Image.open(ram)
+    #im2 = im.convert('RGB').convert('P', palette=Image.ADAPTIVE)
+    #return im2
     return f
