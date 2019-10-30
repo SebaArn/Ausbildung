@@ -9,7 +9,7 @@ import matplotlib.dates as mdates
 import sys
 import os
 import math
-import PIL
+#import PIL
 import getpass
 import pymysql
 import Time_functions as D_
@@ -61,6 +61,11 @@ if Parameternummer:  # tries obtaining quota and startdate from projectdatabase
     number_of_months_DB = DBDaten[1]
     start_point = datetime.datetime.fromtimestamp(DBDaten[0])
     yearly_quota = DBDaten[2] / DBDaten[1] * 12
+
+    if yearly_quota > 0:
+        partial_quota = int(yearly_quota / 12)
+    else:
+        partial_quota = 0  # Script runs under the assumption, the inserted quota = 12* the instance-quota
 
 # Data type to store the different fields in.
 data_type = np.dtype(
@@ -118,12 +123,16 @@ if start_point == "None":
     start_point = x
 highest_data = max(Data[::]['End'])
 highest_data = str(highest_data)
-highest_data = highest_data[2:-1]
-if highest_data < start_point:
+highest_data = highest_data[2:-4]
+## hotfix:
+##highest_data = datetime.datetime.strptime(highest_data, fmt)
+##highest_data = datetime.datetime.strftime(highest_data, fmt)
+if datetime.datetime.strptime(highest_data,fmt).timestamp() < start_point.timestamp():
     sys.stderr.write('The start_point is after the latest date in the file')
     sys.exit()
-datetime.datetime.strptime(start_point, "%Y-%m-%d-%H-%M-%S")
-x = (datetime.datetime.strptime(start_point, "%Y-%m-%d-%H-%M-%S")).timestamp()+3600*24*365
+#datetime.datetime.strptime(start_point, "%Y-%m-%d-%H-%M-%S")
+#x = (datetime.datetime.strptime(start_point, "%Y-%m-%d-%H-%M-%S")).timestamp()+3600*24*365
+#x = start_point.timestamp()+3600*24*365
 plot_array = (np.zeros((Data.size, 3)))  # three values are needed for each data point, time, cputime and accumulated
 # Set a start date way in the future
 x_start = datetime.datetime.strptime("3000-01-01-01-01-01", "%Y-%m-%d-%H-%M-%S")  # a date far in the future
@@ -228,4 +237,4 @@ f = drawing.generate_plot(partial_quota, number_of_instances, f, a0, a1, tmp_y2,
                           Xtics, yearly_quota, x_start, finished, User_t, System_t, y_start2, y_end2, beginning_dt,
                           nutzergraph, fig, x_end, Data, filter_n)
 #f.save (target, format="PNG")   # for png compression
-f.savefig(target, dpi=120, quality=75)
+f.savefig(target, dpi=130, quality=80)

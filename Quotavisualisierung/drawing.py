@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt  # MATLAB-like plotting
 import math
 import datetime
 import io
-import PIL
-from PIL import Image
+#import PIL
+#from PIL import Image
 import matplotlib.ticker as mtick
 import matplotlib.dates as mdates
 from matplotlib.ticker import ScalarFormatter
@@ -72,8 +72,8 @@ def generate_plot(partial_quota, number_of_instances, f, a0, a1, tmp_y2, tmp_x, 
     axis = plt.gca()  # for plotting/saving the plot as it's own image
     # Sets the visual borders for the graphs; area of occurring values (main graph) +- 5%.
     if start_point:  # setting the beginning and end of the graph
-        beginning = datetime.datetime.strptime(start_point, "%Y-%m-%d-%H-%M-%S").timestamp()
-        end = datetime.datetime.strptime(start_point, "%Y-%m-%d-%H-%M-%S").timestamp() + 365 * 24 * 3600
+        beginning = start_point.timestamp()
+        end = start_point.timestamp() + 365 * 24 * 3600
         beginning = beginning - 30*24*3600
         end = end + 30*24*3600
     extrapolation_x = []

@@ -102,10 +102,7 @@ def argparsinit(param, sysargv): ### Reads the Console Inputs, interprets them f
     else:
         if not yearly_quota:
             yearly_quota = 0
-    if yearly_quota > 0:
-        partial_quota = int(yearly_quota / 12)
-    else:
-        partial_quota = 0  # Script runs under the assumption, the inserted quota = 12* the instance-quota
+
     originals = e_parameters[0]
     if e_parameters[0]:
         pass
