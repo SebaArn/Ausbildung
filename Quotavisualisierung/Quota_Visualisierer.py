@@ -94,17 +94,18 @@ for j in Data:
         Data_temp_2.append(j)
 Data = Data_temp_2
 for i in range(1, len(originals)):
-    Data_temp = np.loadtxt(originals[i], dtype=data_type, delimiter='|', skiprows=0,
+    Data_temp = np.loadtxt(originals[i], dtype=data_type, delimiter='|', skiprows=0,ndmin=1,
                            usecols=(0, 1, 3, 5, 6, 7, 8, 9, 12, 13, 26, 27, 14, 16, 15))
     Data_temp_2 = []
-    for j in Data_temp:
-        if 'Unknown' not in str(j['End']) and '.' not in str(j['JobID']) and filter_n in str(j['Account']):
-            Data_temp_2.append(j)
-    if Data_temp_2:
-        if len(Data) > 0:
-            Data = np.append(Data, Data_temp_2)
-        else:
-            Data = Data_temp_2
+    if len(Data_temp) > 0:
+        for j in Data_temp:
+            if 'Unknown' not in str(j['End']) and '.' not in str(j['JobID']) and filter_n in str(j['Account']):
+                Data_temp_2.append(j)
+        if Data_temp_2:
+            if len(Data) > 0:
+                Data = np.append(Data, Data_temp_2)
+            else:
+                Data = Data_temp_2
 Data_temp_2 = []
 if len(Data) < 1:
     sys.stderr.write("No data found")
@@ -144,6 +145,10 @@ x = 0  # i variable, counts how many usable points of data exist
 # gathers the Cores used and multiplies with the time (divided by 3600) to generate Corehours.
 System_t = []
 User_t = []
+if finished:
+    latest = datetime.datetime.strptime("2019-10-29-00-00-00", "%Y-%m-%d-%H-%M-%S")  # parameter
+    x_end = latest
+
 for row in Data:
     end_t = datetime.datetime.strptime(str(row['End'], 'utf-8'), "%Y-%m-%d-%H-%M-%S")  # converts the string into a
     # datetime construct to interpret the end time

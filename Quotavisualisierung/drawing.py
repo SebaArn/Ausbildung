@@ -82,9 +82,9 @@ def generate_plot(partial_quota, number_of_instances, f, a0, a1, tmp_y2, tmp_x, 
         tmp_y2.append(0)
         tmp_y2.append(0)
     # TODO: check if monthsleft aus DBZugriff funktioniert
-    monthsleft = int(12 + ((x_start.timestamp() - tmp_x[-1].timestamp()) / 2629800 + 0.9) // 1)
+    monthsleft = int(12 + ((x_start.timestamp() - x_end.timestamp()) / 2629800 + 0.9) // 1)
     if yearly_quota and len(tmp_x) >= 1:
-        extrapolation_point_x = D_.first_of_month(tmp_x[-1])
+        extrapolation_point_x = D_.first_of_month(x_end)
         extrapolation_point_y = D_.find_y_from_given_time(tmp_x[-1],tmp_x,tmp_y)
         extrapolation_point_y = max(extrapolation_point_y, D_.find_y_from_given_time(D_.first_of_month(extrapolation_point_x),tmp_x,tmp_y)+partial_quota)
         extrapolation_x.append(D_.first_of_month(extrapolation_point_x))
@@ -133,6 +133,7 @@ def generate_plot(partial_quota, number_of_instances, f, a0, a1, tmp_y2, tmp_x, 
     delta = [0]
     total_time = []
     total_time.append(accum_total_time[0])
+    total_time.append(accum_total_time[0])
     difference = [0]
     for i in range(1,len(accum_total_time)):
         total_time.append(accum_total_time[i]- accum_total_time[i-1])
@@ -161,6 +162,8 @@ def generate_plot(partial_quota, number_of_instances, f, a0, a1, tmp_y2, tmp_x, 
     a0.fill_between(tmp_x, 0, accum_total_time, color='#d9e72e', alpha=0.70)  # plotting the area below TotalCPU graph
     a0.plot(tmp_x, tmp_y, 'dimgrey', fillstyle='bottom', alpha=0.75)  # plotting the main graph (cores * hours)
     a0.fill_between(tmp_x, 0, tmp_y, color="grey", alpha=0.45)  # plotting the area below the corehours graph
+    for i in range(len(accum_total_time),number_of_instances*3+4):  # ensuring that empty months will be accounted for
+        accum_total_time = np.append(accum_total_time, accum_total_time[-1])  # filling accumulated time with most recent
     if yearly_quota:
         for i in range(0, int(number_of_instances)):  # not possible for the last area, hence skipping it.
             monthly_used.append(accum_total_time[i * 3 + 3] - accum_total_time[i * 3])
@@ -220,21 +223,27 @@ def generate_plot(partial_quota, number_of_instances, f, a0, a1, tmp_y2, tmp_x, 
     new_ylabels = []
     unit = ""
     for i in range(len(a0.get_yticklabels())):
-        scale = math.log(tmp_y[-1]//2, 10)//1
-        new_ylabels.append(str(a0.get_yticks()[i]/(10**scale)).split(".")[0])
-        unit = "10^" + str(int(math.log(tmp_y[-1]//2, 10)//1))
+        if tmp_y[-1] < 10:
+            scale = 0
+            new_ylabels.append(str(a0.get_yticks()[i] / (10 ** scale)).split(".")[0])
+            unit = "10^0"
+        else:
+            scale = math.log(tmp_y[-1]//2, 10)//1
+            new_ylabels.append(str(a0.get_yticks()[i]/(10**scale)).split(".")[0])
+            unit = "10^" + str(int(math.log(tmp_y[-1]//2, 10)//1))
+
     if unit:
-        if unit == "10^6":
-            unit = "in million"
         if unit == "10^7":
             unit = "in ten million"
+        if unit == "10^6":
+            unit = "in million"
         if unit == "10^5":
             unit = "in hundred thousand"
         if unit == "10^4":
             unit = "in ten thousand"
         if unit == "10^3":
-            unit = "in hundred"
-        if unit == "10^3":
+            unit = "in thousand"
+        if unit == "10^2":
             unit = "in hundred"
     plt.ylabel("CPUhours ("+unit+")")
     a0.set_xticklabels = emptylabels
