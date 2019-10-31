@@ -37,13 +37,14 @@ def colorization(value, comp):
 
 # gets the current y labels of the plot
 # and should return new labels as well as the new unit
-def get_scaled_ylabels (old_y_labels,scaling_value):
+def get_scaled_ylabels (old_y_labels):
     new_ylabels = []
     unit = ""
 
     old_labels_str = [str(int(l)) for l in old_y_labels]
 
-    # min amount of 0
+    # min amount of 0s that may be "removed"
+    #therefore we do not "remove" e.g. the 5 form 15"
     min_0_delete=len(old_labels_str[0])
 
     for label in old_labels_str:
@@ -261,7 +262,7 @@ def generate_plot(partial_quota, number_of_instances, f, a0, a1, tmp_y2, tmp_x, 
     for i in a0.get_xticklabels():
         emptylabels.append(["", ""])
 
-    new_ylabels,unit = get_scaled_ylabels(a0.get_yticks(),tmp_y[-1])
+    new_ylabels,unit = get_scaled_ylabels(a0.get_yticks())
 
     plt.ylabel("CPUhours ("+unit+")")
 
