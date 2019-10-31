@@ -1,5 +1,3 @@
-from hmac import new
-
 import matplotlib.patches as mpatches
 import numpy as np
 import matplotlib.pyplot as plt  # MATLAB-like plotting
@@ -42,15 +40,26 @@ def colorization(value, comp):
 def get_scaled_ylabels (old_y_labels,scaling_value):
     new_ylabels = []
     unit = ""
-    for i in range(len(old_y_labels)):
-        if scaling_value < 10:
-            scale = 0
-            new_ylabels.append(str(old_y_labels[i] / (10 ** scale)).split(".")[0])
-            unit = "10^0"
-        else:
-            scale = math.log(scaling_value // 2, 10) // 1
-            new_ylabels.append(str(old_y_labels[i] / (10 ** scale)).split(".")[0])
-            unit = "10^" + str(int(math.log(scaling_value // 2, 10) // 1))
+
+    old_labels_str = [str(int(l)) for l in old_y_labels]
+
+    # min amount of 0
+    min_0_delete=len(old_labels_str[0])
+
+    for label in old_labels_str:
+        j = len(label) - 1
+        count=0
+        while j>0 and label[j]=='0':
+            count +=1
+            j-=1
+        # do not include the 0 label in this consideration
+        if min_0_delete > count and label[j]!='0':
+            min_0_delete=count
+
+    for label in old_labels_str:
+        new_ylabels.append(label[0:-min_0_delete])
+
+    unit = "10^" + str(min_0_delete)
 
     if unit:
         if unit == "10^7":
