@@ -39,7 +39,7 @@ start_point = Parsing.get_start_point()
 filter_n = Parsing.get_filter()
 originals = Parsing.get_original()
 nutzergraph = Parsing.get_nutzer_graph()
-finished = Parsing.get_finished()
+datum = Parsing.get_datum()
 number_of_months_DB = Parsing.get_number_of_months()
 target = Parsing.get_target()
 Parameternummer = Parsing.get_parameter_nr()
@@ -121,7 +121,9 @@ if start_point == "None":
     x = Data[0][10]
     x = (str(x)[2::])
     x = x[:-1:]
-    start_point = x
+    start_point = datetime.datetime.strptime(x, "%Y-%m-%d-%H-%M-%S")
+#else:
+#    start_point = datetime.datetime.
 highest_data = max(Data[::]['End'])
 highest_data = str(highest_data)
 highest_data = highest_data[2:-4]
@@ -145,9 +147,11 @@ x = 0  # i variable, counts how many usable points of data exist
 # gathers the Cores used and multiplies with the time (divided by 3600) to generate Corehours.
 System_t = []
 User_t = []
-if finished:
-    latest = datetime.datetime.strptime("2019-10-29-00-00-00", "%Y-%m-%d-%H-%M-%S")  # parameter
-    x_end = latest
+if datum:
+    latest = datum
+    x_end = datetime.datetime.strptime(latest)
+    #latest = datetime.datetime.strptime("2019-10-29-00-00-00", "%Y-%m-%d-%H-%M-%S")  # parameter
+    #x_end = latest
 
 for row in Data:
     end_t = datetime.datetime.strptime(str(row['End'], 'utf-8'), "%Y-%m-%d-%H-%M-%S")  # converts the string into a
@@ -239,7 +243,7 @@ if yearly_quota:
 # transforms x2 into a format that can be visualized via the plotter alongside the main plot
 tmp_y2.append(tmp_y[-1])
 f = drawing.generate_plot(partial_quota, number_of_instances, f, a0, a1, tmp_y2, tmp_x, tmp_y, blocks_x, start_point,
-                          Xtics, yearly_quota, x_start, finished, User_t, System_t, y_start2, y_end2, beginning_dt,
+                          Xtics, yearly_quota, x_start, datum, User_t, System_t, y_start2, y_end2, beginning_dt,
                           nutzergraph, fig, x_end, Data, filter_n)
 #f.save (target, format="PNG")   # for png compression
 f.savefig(target, dpi=130, quality=80)

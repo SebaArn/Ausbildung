@@ -10,7 +10,7 @@ filter_n = 0
 originals = ""
 number_of_months_DB = 0
 partial_quota = 0
-finished = False
+datum = False
 target_file = ""
 Parameternummer = 0
 
@@ -47,14 +47,13 @@ def essential_par(parameters):  # reads the parameters and interprets -src, -o a
 
 
 def argparsinit(param, sysargv): ### Reads the Console Inputs, interprets them for the main module to request
-    global finished
+    global datum
     global yearly_quota
     global start_point
     global filter_n
     global originals
     global number_of_months_DB
     global partial_quota
-    global finished
     global Parameternummer
     global target_file
     ap = param
@@ -69,17 +68,14 @@ def argparsinit(param, sysargv): ### Reads the Console Inputs, interprets them f
     ap.add_argument('--project', dest='ProjectName', type=str, nargs='?')
     ap.add_argument('rest', type=str, nargs='*')
     ap.add_argument('-usergraph', type=bool)
-    ap.add_argument('-finished', type=bool)
+    ap.add_argument('-datum', default="None", type=str, nargs='?')
     o_parameters = ap.parse_args()
     print("O UND E PARA",sysargv[1:], o_parameters)
     e_parameters = essential_par((sysargv[1:]))
     if "usergraph" in str(sysargv):
         global nutzergraph
         nutzergraph = True
-    finished = False
-    if "-finished" in str(sysargv):
 
-        finished = True
     # parse parameters into values, divide the Quota into months from the yearly quota.
     # convert input-parameters into data to interpret
     yearly_quota = 0
@@ -143,8 +139,8 @@ def get_partial_quota():
     return partial_quota
 
 
-def get_finished():
-    return finished
+def get_datum():
+    return datum
 
 
 def get_target():
