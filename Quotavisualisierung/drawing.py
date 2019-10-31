@@ -141,7 +141,7 @@ def generate_plot(partial_quota, number_of_instances, f, a0, a1, tmp_y2, tmp_x, 
         if delta[i] > 100:
             a = 0
     if yearly_quota:  # ensuring that the extrapolated quota is still in frame
-        a0.set_ylim([y_start2 - (0.05 * y_end2), max(tmp_y[-1], max(extrapolation_y)) * 1.2])
+        a0.set_ylim([y_start2 - (0.05 * y_end2), max(tmp_y[-1], max(coordinates_y), max(extrapolation_y)) * 1.2])
     #    print("limit",a0.get_ylim()[1])
     else:  # No quota given, image is focused around occupied and utilized resources.
         print("NO YEARLY DETECTED")

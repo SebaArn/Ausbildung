@@ -152,7 +152,20 @@ if datum:
     x_end = datetime.datetime.strptime(latest)
     #latest = datetime.datetime.strptime("2019-10-29-00-00-00", "%Y-%m-%d-%H-%M-%S")  # parameter
     #x_end = latest
+#data_type = np.dtype(
+#    [('JobID', '|S256'), ('Account', '|S256'), ('ReqCPUS', 'i4'), ('ReqNodes', 'i4'), ('AllocNodes', 'i4'),
+#     ('AllocCPUS', 'i4'),
+#     ('NNodes', 'i4'), ('NCPUS', 'i4'), ('CPUTimeRAW', 'uint64'), ('ElapsedRaw', 'uint64'), ('Start', '|S256'),
+#     ('End', '|S256'), ('TotalCPU', '|S256'), ('UserCPU', '|S256'), ('SystemCPU', '|S256')])
 
+Data.append(Data[0])
+Data[-1][8] = 1
+Data[-1][9] = x_end
+Data[-1][10] = x_end
+Data[-1][11] = "00:00:01"
+Data[-1][12] = "00:00:01"
+Data[-1][12] = "00:00:01"
+ #### Setzte einen Punkt an den aktuellen Tag ####
 for row in Data:
     end_t = datetime.datetime.strptime(str(row['End'], 'utf-8'), "%Y-%m-%d-%H-%M-%S")  # converts the string into a
     # datetime construct to interpret the end time
