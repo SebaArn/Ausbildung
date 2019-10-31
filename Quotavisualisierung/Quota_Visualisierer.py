@@ -54,7 +54,7 @@ if Parameternummer:  # tries obtaining quota and startdate from projectdatabase
                           password=password,
                           db='projektantrag')
     cur = db2.cursor()
-    string = "SELECT projektstart,number_of_months,coreh FROM data WHERE id=" + str(
+    string = "SELECT projektstart,number_of_months,Tatsaechliche_coreh FROM data WHERE id=" + str(
         Parameternummer) + ";"
     cur.execute(string)
     DBDaten = cur.fetchall()[0]
