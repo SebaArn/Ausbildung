@@ -1,3 +1,5 @@
+from hmac import new
+
 import matplotlib.patches as mpatches
 import numpy as np
 import matplotlib.pyplot as plt  # MATLAB-like plotting
@@ -33,6 +35,38 @@ def colorization(value, comp):
         return colors[2]
     else:
         return maximum
+
+
+# gets the current y labels of the plot
+# and should return new labels as well as the new unit
+def get_scaled_ylabels (old_y_labels,scaling_value):
+    new_ylabels = []
+    unit = ""
+    for i in range(len(old_y_labels)):
+        if scaling_value < 10:
+            scale = 0
+            new_ylabels.append(str(old_y_labels[i] / (10 ** scale)).split(".")[0])
+            unit = "10^0"
+        else:
+            scale = math.log(scaling_value // 2, 10) // 1
+            new_ylabels.append(str(old_y_labels[i] / (10 ** scale)).split(".")[0])
+            unit = "10^" + str(int(math.log(scaling_value // 2, 10) // 1))
+
+    if unit:
+        if unit == "10^7":
+            unit = "in ten million"
+        if unit == "10^6":
+            unit = "in million"
+        if unit == "10^5":
+            unit = "in hundred thousand"
+        if unit == "10^4":
+            unit = "in ten thousand"
+        if unit == "10^3":
+            unit = "in thousand"
+        if unit == "10^2":
+            unit = "in hundred"
+
+    return new_ylabels, unit
 
 
 def generate_plot(partial_quota, number_of_instances, f, a0, a1, tmp_y2, tmp_x, tmp_y, blocks_x, start_point, Xtics,
@@ -94,14 +128,11 @@ def generate_plot(partial_quota, number_of_instances, f, a0, a1, tmp_y2, tmp_x, 
         extrapolation_y.append(max(extrapolation_y[0]+partial_quota, tmp_y[-1]))
         extrapolation_y.append(extrapolation_y[-1])
         expoint_y = extrapolation_y[-1]
-        if finished:
-            extrapolation_y[-2] = tmp_y[-1]
-            extrapolation_y[-1] = tmp_y[-1]
-            expoint_y = extrapolation_y[-1]
-        else:
-            expoint_y = max(D_.find_y_from_given_time(extrapolation_point_x,tmp_x,tmp_y)+partial_quota,tmp_y[-1])
-            extrapolation_y[-2] = expoint_y
-            extrapolation_y[-1] = expoint_y
+
+        extrapolation_y[-2] = tmp_y[-1]
+        extrapolation_y[-1] = tmp_y[-1]
+        expoint_y = extrapolation_y[-1]
+
         xtr_pt_x = extrapolation_point_x
         xtr_pt_y = extrapolation_point_y
         for i in range(1, monthsleft):  # The three points required for each block
@@ -141,7 +172,7 @@ def generate_plot(partial_quota, number_of_instances, f, a0, a1, tmp_y2, tmp_x, 
         if delta[i] > 100:
             a = 0
     if yearly_quota:  # ensuring that the extrapolated quota is still in frame
-        a0.set_ylim([y_start2 - (0.05 * y_end2), max(tmp_y[-1], max(coordinates_y), max(extrapolation_y)) * 1.2])
+        a0.set_ylim([y_start2 - (0.05 * y_end2), max(tmp_y[-1], max(extrapolation_y),max(coordinates_y)) * 1.2])
     #    print("limit",a0.get_ylim()[1])
     else:  # No quota given, image is focused around occupied and utilized resources.
         print("NO YEARLY DETECTED")
@@ -220,32 +251,11 @@ def generate_plot(partial_quota, number_of_instances, f, a0, a1, tmp_y2, tmp_x, 
     emptylabels = []
     for i in a0.get_xticklabels():
         emptylabels.append(["", ""])
-    new_ylabels = []
-    unit = ""
-    for i in range(len(a0.get_yticklabels())):
-        if tmp_y[-1] < 10:
-            scale = 0
-            new_ylabels.append(str(a0.get_yticks()[i] / (10 ** scale)).split(".")[0])
-            unit = "10^0"
-        else:
-            scale = math.log(tmp_y[-1]//2, 10)//1
-            new_ylabels.append(str(a0.get_yticks()[i]/(10**scale)).split(".")[0])
-            unit = "10^" + str(int(math.log(tmp_y[-1]//2, 10)//1))
 
-    if unit:
-        if unit == "10^7":
-            unit = "in ten million"
-        if unit == "10^6":
-            unit = "in million"
-        if unit == "10^5":
-            unit = "in hundred thousand"
-        if unit == "10^4":
-            unit = "in ten thousand"
-        if unit == "10^3":
-            unit = "in thousand"
-        if unit == "10^2":
-            unit = "in hundred"
+    new_ylabels,unit = get_scaled_ylabels(a0.get_yticks(),tmp_y[-1])
+
     plt.ylabel("CPUhours ("+unit+")")
+
     a0.set_xticklabels = emptylabels
     a0.set_yticklabels(new_ylabels)
     plt.sca(a1)
@@ -265,4 +275,6 @@ def generate_plot(partial_quota, number_of_instances, f, a0, a1, tmp_y2, tmp_x, 
     #im = Image.open(ram)
     #im2 = im.convert('RGB').convert('P', palette=Image.ADAPTIVE)
     #return im2
+    #print(tmp_x)
+    #print(tmp_y)
     return f
