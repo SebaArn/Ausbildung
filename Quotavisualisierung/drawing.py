@@ -125,8 +125,11 @@ def generate_plot(partial_quota, number_of_instances, f, a0, a1, tmp_y2, tmp_x, 
     if len(tmp_y2) < 3:
         tmp_y2.append(0)
         tmp_y2.append(0)
-    # TODO: check if monthsleft aus DBZugriff funktioniert
-    monthsleft = int(12 + ((x_start.timestamp() - x_end.timestamp()) / 2629800 + 0.9) // 1)
+
+    usedmonths += 12 * (int(x_end.strftime("%Y")) - int(x_start.strftime("%Y")))
+    usedmonths += int(x_end.strftime("%m")) - int(x_start.strftime("%m"))
+    monthsleft = int(months - usedmonths)
+
     if yearly_quota and len(tmp_x) >= 1:
         extrapolation_point_x = D_.first_of_month(x_end)
         extrapolation_point_y = D_.find_y_from_given_time(tmp_x[-1],tmp_x,tmp_y)
@@ -194,7 +197,7 @@ def generate_plot(partial_quota, number_of_instances, f, a0, a1, tmp_y2, tmp_x, 
     light_green_patch = mpatches.Patch(color='#81c478', alpha=0.8, label='<70%')
     grey_patch = mpatches.Patch(color='dimgrey', alpha=0.75, label='Allocated corehours')
     yellow_patch = mpatches.Patch(color='#d9e72e', alpha=0.49, label='Utilized corehours')
-    black_patch = mpatches.Patch(color='black', alpha=1, label='Remaining corehours')
+    black_patch = mpatches.Patch(color='black', alpha=1, label='Granted corehours')
     a0.plot(tmp_x, accum_total_time, '#d9e72e')  # plotting the TotatlCPU Graph
     if yearly_quota:  # Legends for if there is a quota, or a shorter Legend in case there isn't.
         a0.legend(handles=[red_patch, orange_patch, green_patch, light_green_patch, grey_patch, yellow_patch, black_patch])
