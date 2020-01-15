@@ -81,7 +81,7 @@ def get_scaled_ylabels (old_y_labels):
 
 def generate_plot(partial_quota, number_of_instances, f, a0, a1, tmp_y2, tmp_x, tmp_y, blocks_x, start_point, Xtics,
                   yearly_quota, x_start, finished, User_t, System_t, y_start2, y_end2, beginning_dt, nutzergraph,
-                  fig, x_end, Data, filter_n):
+                  fig, x_end, Data, filter_n, months):
     if filter_n:
         f.suptitle(str(filter_n),fontweight="bold")
     else:
@@ -125,7 +125,7 @@ def generate_plot(partial_quota, number_of_instances, f, a0, a1, tmp_y2, tmp_x, 
     if len(tmp_y2) < 3:
         tmp_y2.append(0)
         tmp_y2.append(0)
-
+    usedmonths = 0
     usedmonths += 12 * (int(x_end.strftime("%Y")) - int(x_start.strftime("%Y")))
     usedmonths += int(x_end.strftime("%m")) - int(x_start.strftime("%m"))
     monthsleft = int(months - usedmonths)

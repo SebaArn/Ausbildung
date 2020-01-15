@@ -255,6 +255,6 @@ if yearly_quota:
 tmp_y2.append(tmp_y[-1])
 f = drawing.generate_plot(partial_quota, number_of_instances, f, a0, a1, tmp_y2, tmp_x, tmp_y, blocks_x, start_point,
                           Xtics, yearly_quota, x_start, datum, User_t, System_t, y_start2, y_end2, beginning_dt,
-                          nutzergraph, fig, x_end, Data, filter_n)
+                          nutzergraph, fig, x_end, Data, filter_n, months)
 #f.save (target, format="PNG")   # for png compression
 f.savefig(target, dpi=130, quality=80)
